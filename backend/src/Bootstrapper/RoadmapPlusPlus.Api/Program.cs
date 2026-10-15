@@ -1,4 +1,5 @@
 using RoadmapPlusPlus.Api.Middleware;
+using RoadmapPlusPlus.Api.OpenApi;
 using RoadmapPlusPlus.BuildingBlocks;
 using RoadmapPlusPlus.BuildingBlocks.Persistence;
 using RoadmapPlusPlus.Modules.Assistant;
@@ -18,6 +19,11 @@ IModule[] modules =
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder( args );
 
+if ( BuildTimeOpenApi.IsGeneratingDocument )
+{
+    builder.Logging.ClearProviders();
+}
+
 builder.Services.AddErrorHandling();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
@@ -30,13 +36,19 @@ foreach ( IModule module in modules )
 
 WebApplication app = builder.Build();
 
-await app.Services.MigrateModuleDatabasesAsync();
+if ( !BuildTimeOpenApi.IsGeneratingDocument )
+{
+    await app.Services.MigrateModuleDatabasesAsync();
+}
 
 app.UseErrorHandling();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
 
-RouteGroupBuilder api = app.MapGroup( "/api" );
-api.MapOpenApi( "/openapi/{documentName}.json" );
-api.MapHealthChecks( "/health" );
+RouteGroupBuilder api = app.MapGroup( "/api" ).RequireAuthorization();
+api.MapOpenApi( "/openapi/{documentName}.json" ).AllowAnonymous();
+api.MapHealthChecks( "/health" ).AllowAnonymous();
 
 foreach ( IModule module in modules )
 {

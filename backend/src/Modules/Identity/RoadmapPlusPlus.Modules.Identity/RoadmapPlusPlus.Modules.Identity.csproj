@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\RoadmapPlusPlus.BuildingBlocks\RoadmapPlusPlus.BuildingBlocks.csproj" />
     <ProjectReference Include="..\RoadmapPlusPlus.Modules.Identity.Contracts\RoadmapPlusPlus.Modules.Identity.Contracts.csproj" />
   </ItemGroup>

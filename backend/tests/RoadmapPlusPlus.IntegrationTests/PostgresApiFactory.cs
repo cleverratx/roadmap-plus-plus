@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using RoadmapPlusPlus.BuildingBlocks.Persistence;
 using RoadmapPlusPlus.IntegrationTests;
 using Testcontainers.PostgreSql;
 
@@ -14,7 +13,11 @@ namespace RoadmapPlusPlus.IntegrationTests
     /// </summary>
     public sealed class PostgresApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
-        private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder( "postgres:18-alpine" ).Build();
+        public const string PostgresImage = "postgres:18-alpine";
+
+        private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder( PostgresImage ).Build();
+
+        public string ConnectionString => _postgres.GetConnectionString();
 
         public async ValueTask InitializeAsync()
         {
@@ -29,8 +32,7 @@ namespace RoadmapPlusPlus.IntegrationTests
 
         protected override void ConfigureWebHost( IWebHostBuilder builder )
         {
-            builder.UseEnvironment( "Testing" );
-            builder.UseSetting( $"ConnectionStrings:{PersistenceServiceCollectionExtensions.ConnectionStringName}", _postgres.GetConnectionString() );
+            TestApi.Configure( builder, ConnectionString );
         }
     }
 }

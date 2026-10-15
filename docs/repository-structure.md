@@ -24,12 +24,13 @@ roadmap-plus-plus/
 │   │   ├── Bootstrapper/
 │   │   │   └── RoadmapPlusPlus.Api/         # Program.cs: подключает модули, БД и миграции, auth, OpenAPI, health
 │   │   │       ├── Middleware/              # ошибки в ProblemDetails, необработанные исключения, X-Request-Id
+│   │   │       ├── OpenApi/                 # режим генерации OpenAPI-документа при сборке: без миграций и логов
 │   │   │       └── Persistence/             # настройки dotnet ef: миграции генерируются internal
 │   │   ├── BuildingBlocks/
 │   │   │   └── RoadmapPlusPlus.BuildingBlocks/   # IModule, ModuleDbContext, Result, Entity, шина событий
 │   │   └── Modules/
 │   │       ├── Identity/
-│   │       │   ├── RoadmapPlusPlus.Modules.Identity/            # Domain, Application, Infrastructure, Endpoints
+│   │       │   ├── RoadmapPlusPlus.Modules.Identity/            # пользователи, вход, сессия в cookie, ключи Data Protection
 │   │       │   └── RoadmapPlusPlus.Modules.Identity.Contracts/  # текущий пользователь, проверка прав
 │   │       ├── Planning/                                         # ядро
 │   │       │   ├── RoadmapPlusPlus.Modules.Planning/
@@ -74,12 +75,12 @@ roadmap-plus-plus/
 │   ├── public/
 │   └── src/
 │       ├── app/                             # вход (main.tsx, App.tsx), роутер, провайдеры, каркас страницы, стили
-│       ├── pages/                           # roadmap, event, agenda, knowledge, settings, not-found
+│       ├── pages/                           # roadmap, event, agenda, knowledge, settings, login, register, not-found
 │       ├── widgets/                         # app-header, timeline, event-panel, task-table, agenda-list,
 │       │                                    # kb-viewer, assistant-panel
-│       ├── features/                        # timeline-zoom, item-edit, task-status,
+│       ├── features/                        # auth, timeline-zoom, item-edit, task-status,
 │       │                                    # md-export, md-import, changeset-review
-│       ├── entities/                        # item, member, field, kb-doc
+│       ├── entities/                        # session, item, member, field, kb-doc
 │       └── shared/                          # api (типы из OpenAPI, клиент, ошибки), ui (кит),
 │                                            # lib (утилиты, настройка тестов), config (пути)
 │

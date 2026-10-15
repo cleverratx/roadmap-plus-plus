@@ -51,6 +51,18 @@ namespace RoadmapPlusPlus.BuildingBlocks.Tests
         }
 
         [Fact]
+        public async Task ValidationErrorWithoutFieldsHasNoErrors()
+        {
+            Error error = Error.Validation( "test.invalid_credentials", "Неверный email или пароль." );
+
+            (HttpContext context, JsonElement body) = await ExecuteAsync( error.ToProblem() );
+
+            Assert.Equal( StatusCodes.Status400BadRequest, context.Response.StatusCode );
+            Assert.False( body.TryGetProperty( "errors", out _ ) );
+            Assert.Equal( "Bad Request", body.GetProperty( "title" ).GetString() );
+        }
+
+        [Fact]
         public async Task SuccessWithoutValueIsNoContent()
         {
             (HttpContext context, _) = await ExecuteAsync( Result.Success().ToHttpResult() );

@@ -1,4 +1,5 @@
-import { QueryClient } from '@tanstack/react-query'
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
+import { meQueryKey } from '@/entities/session'
 import { HttpError } from '@/shared/api'
 
 export function shouldRetry(failureCount: number, error: Error): boolean {
@@ -7,7 +8,9 @@ export function shouldRetry(failureCount: number, error: Error): boolean {
 }
 
 export function createQueryClient(): QueryClient {
-  return new QueryClient({
+  const client: QueryClient = new QueryClient({
+    queryCache: new QueryCache({ onError: forgetSessionOnUnauthorized }),
+    mutationCache: new MutationCache({ onError: forgetSessionOnUnauthorized }),
     defaultOptions: {
       queries: {
         staleTime: 30_000,
@@ -15,4 +18,12 @@ export function createQueryClient(): QueryClient {
       },
     },
   })
+
+  function forgetSessionOnUnauthorized(error: Error) {
+    if (error instanceof HttpError && error.status === 401) {
+      client.setQueryData(meQueryKey, null)
+    }
+  }
+
+  return client
 }

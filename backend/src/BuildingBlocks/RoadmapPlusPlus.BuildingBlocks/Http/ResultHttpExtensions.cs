@@ -6,7 +6,7 @@ namespace RoadmapPlusPlus.BuildingBlocks.Http
 {
     /// <summary>
     /// Превращает <see cref="Result"/> в ответ эндпоинта. Ошибка становится ProblemDetails с полем <c>code</c>,
-    /// у ошибки валидации добавляется <c>errors</c> по полям.
+    /// а если у ошибки валидации есть поля, к ним добавляется <c>errors</c>.
     /// </summary>
     public static class ResultHttpExtensions
     {
@@ -29,7 +29,7 @@ namespace RoadmapPlusPlus.BuildingBlocks.Http
 
         public static ProblemHttpResult ToProblem( this Error error )
         {
-            ProblemDetails problem = error.Type == ErrorType.Validation
+            ProblemDetails problem = error.Fields.Count > 0
                 ? new HttpValidationProblemDetails( error.Fields )
                 : new ProblemDetails();
 
