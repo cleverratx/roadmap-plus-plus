@@ -1,4 +1,5 @@
 export { Button, type ButtonVariant } from './button/Button'
+export { ColorSwatches } from './color-swatches/ColorSwatches'
 export { ContextMenu, type ContextMenuItem } from './context-menu/ContextMenu'
 export { Dialog, DialogClose } from './dialog/Dialog'
 export { FormCard } from './form-card/FormCard'

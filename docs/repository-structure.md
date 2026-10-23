@@ -63,6 +63,7 @@ roadmap-plus-plus/
 │   └── tests/
 │       ├── RoadmapPlusPlus.ArchitectureTests/       # границы модулей: только *.Contracts, без циклов
 │       ├── RoadmapPlusPlus.BuildingBlocks.Tests/    # Result, Error и их перевод в HTTP-ответ
+│       ├── RoadmapPlusPlus.Modules.Identity.Tests/  # правила команды: главы, выход, приглашения
 │       ├── RoadmapPlusPlus.Modules.Planning.Tests/
 │       ├── RoadmapPlusPlus.Modules.Knowledge.Tests/
 │       ├── RoadmapPlusPlus.Modules.Interchange.Tests/
@@ -75,12 +76,14 @@ roadmap-plus-plus/
 │   ├── public/
 │   └── src/
 │       ├── app/                             # вход (main.tsx, App.tsx), роутер, провайдеры, каркас страницы, стили
-│       ├── pages/                           # roadmap, event, agenda, knowledge, settings, login, register, not-found
+│       ├── pages/                           # roadmap, event, agenda, knowledge, settings, team, invite,
+│       │                                    # login, register, not-found
 │       ├── widgets/                         # app-header, timeline, event-panel, task-table, agenda-list,
 │       │                                    # kb-viewer, assistant-panel
-│       ├── features/                        # auth, timeline-zoom, item-edit, task-status,
+│       ├── features/                        # auth, workspace-create, workspace-edit, workspace-invite,
+│       │                                    # workspace-members, invitation-accept, timeline-zoom, item-edit, task-status,
 │       │                                    # md-export, md-import, changeset-review
-│       ├── entities/                        # session, item, member, field, kb-doc
+│       ├── entities/                        # session, workspace, item, member, field, kb-doc
 │       └── shared/                          # api (типы из OpenAPI, клиент, ошибки), ui (кит),
 │                                            # lib (утилиты, настройка тестов), config (пути)
 │

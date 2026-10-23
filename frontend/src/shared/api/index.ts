@@ -1,4 +1,5 @@
 export { api } from './client'
+export { toFormErrors, type FormErrors } from './form-errors'
 export { fetchHealth, type HealthStatus } from './health'
 export { HttpError } from './http-error'
 export { type ProblemDetails } from './problem'

@@ -19,9 +19,14 @@ namespace RoadmapPlusPlus.IntegrationTests
 
         public string ConnectionString => _postgres.GetConnectionString();
 
+        /// <summary>
+        /// Поднимает базу и сразу запускает API, чтобы миграции применились до тестов. Иначе общий API и производные
+        /// экземпляры из <c>WithWebHostBuilder</c> стартуют параллельно и накатывают миграции на одну базу одновременно.
+        /// </summary>
         public async ValueTask InitializeAsync()
         {
             await _postgres.StartAsync();
+            _ = Services;
         }
 
         public override async ValueTask DisposeAsync()

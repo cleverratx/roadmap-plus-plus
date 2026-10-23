@@ -7,12 +7,16 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using RoadmapPlusPlus.BuildingBlocks;
 using RoadmapPlusPlus.BuildingBlocks.Persistence;
 using RoadmapPlusPlus.Modules.Identity.Application.Auth;
+using RoadmapPlusPlus.Modules.Identity.Application.Workspaces;
+using RoadmapPlusPlus.Modules.Identity.Contracts;
 using RoadmapPlusPlus.Modules.Identity.Domain;
 using RoadmapPlusPlus.Modules.Identity.Endpoints;
+using RoadmapPlusPlus.Modules.Identity.Infrastructure;
 using RoadmapPlusPlus.Modules.Identity.Infrastructure.Persistence;
 
 namespace RoadmapPlusPlus.Modules.Identity
@@ -46,11 +50,18 @@ namespace RoadmapPlusPlus.Modules.Identity
             } );
 
             services.AddScoped<AuthService>();
+
+            services.TryAddSingleton( TimeProvider.System );
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUser, HttpCurrentUser>();
+            services.AddScoped<IWorkspaceMemberships, WorkspaceMemberships>();
+            services.AddScoped<WorkspaceService>();
         }
 
         public void MapEndpoints( IEndpointRouteBuilder endpoints )
         {
             endpoints.MapAuthEndpoints();
+            endpoints.MapWorkspaceEndpoints();
         }
 
         private static void ConfigureIdentity( IdentityOptions options )

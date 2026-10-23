@@ -22,7 +22,8 @@
 
 | Сущность | Модуль | Что это | Ключевые поля |
 |---|---|---|---|
-| `Workspace`, `Member` | Identity | команда и её участники | название, цвет, `rolesEnabled`; пользователь, `isHead` (глава), цвет человека в команде |
+| `Workspace`, `Member` | Identity | команда и её участники; состав меняется только через методы `Workspace` | название, цвет, `version` (растёт при каждом изменении состава и защищает от одновременных правок), `rolesEnabled` (появится вместе с ролями); пользователь, `isHead` (глава), цвет человека в команде, дата вступления |
+| `Invitation` | Identity | ссылка-приглашение в команду, многоразовая; у команды одна активная, новая отзывает старую | `workspaceId`, `token` (192 случайных бита), срок действия 7 дней, `revokedAt` |
 | `Role`, `MemberRole` | Identity | роль команды и кто её носит, у участника может быть несколько ролей | название, цвет; `memberId`, `roleId` |
 | `Item` | Planning | узел дерева | `workspaceId`, `parentId`, `kind` (`macro` / `event` / `group` / `task`), `title`, `code` (`D1-01`), `start` / `end` / `allDay`, `status`, `assignees[]`, `fields` (JSONB со значениями своих колонок), `position`, `descriptionMd`, `taskSource` (у события) |
 | `ItemRole` | Planning | какой роли открыт узел, действует на всё поддерево | `itemId`, `roleId` |
