@@ -25,6 +25,7 @@ function signedIn(health = new Response('Healthy')) {
   return mockApi({
     'GET /api/me': () => json(me),
     'GET /api/health': () => health.clone(),
+    'GET /api/workspaces': () => json([]),
     'POST /api/auth/logout': () => new Response(null, { status: 204 }),
   })
 }

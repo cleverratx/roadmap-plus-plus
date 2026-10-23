@@ -1,4 +1,4 @@
-import { HttpError } from '@/shared/api'
+import { HttpError } from './http-error'
 
 export type FormErrors = {
   fields: Record<string, string>

@@ -30,5 +30,6 @@
     <Project Path="tests/RoadmapPlusPlus.ArchitectureTests/RoadmapPlusPlus.ArchitectureTests.csproj" />
     <Project Path="tests/RoadmapPlusPlus.BuildingBlocks.Tests/RoadmapPlusPlus.BuildingBlocks.Tests.csproj" />
     <Project Path="tests/RoadmapPlusPlus.IntegrationTests/RoadmapPlusPlus.IntegrationTests.csproj" />
+    <Project Path="tests/RoadmapPlusPlus.Modules.Identity.Tests/RoadmapPlusPlus.Modules.Identity.Tests.csproj" />
   </Folder>
 </Solution>

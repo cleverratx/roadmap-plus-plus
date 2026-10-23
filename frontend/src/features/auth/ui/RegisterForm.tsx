@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { Me } from '@/entities/session'
+import { toFormErrors } from '@/shared/api'
 import { Button, TextField } from '@/shared/ui'
-import { toFormErrors } from '../model/form-errors'
 import { useRegister } from '../model/mutations'
 import styles from './AuthForm.module.css'
 
