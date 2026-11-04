@@ -43,6 +43,7 @@ Node нужен 24-й, версия записана в `frontend/.nvmrc`. Vite 
 cd backend
 dotnet tool restore
 dotnet ef migrations add <Имя> \
+  --context PlanningDbContext \
   --project src/Modules/Planning/RoadmapPlusPlus.Modules.Planning \
   --startup-project src/Bootstrapper/RoadmapPlusPlus.Api \
   --output-dir Infrastructure/Persistence/Migrations

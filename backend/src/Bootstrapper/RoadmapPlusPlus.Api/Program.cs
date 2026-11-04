@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using RoadmapPlusPlus.Api.Middleware;
 using RoadmapPlusPlus.Api.OpenApi;
@@ -26,7 +27,11 @@ if ( BuildTimeOpenApi.IsGeneratingDocument )
 }
 
 builder.Services.AddErrorHandling();
-builder.Services.ConfigureHttpJsonOptions( options => options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict );
+builder.Services.ConfigureHttpJsonOptions( options =>
+{
+    options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+    options.SerializerOptions.Converters.Add( new JsonStringEnumConverter( JsonNamingPolicy.CamelCase ) );
+} );
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 builder.Services.AddPostgres( builder.Configuration );
