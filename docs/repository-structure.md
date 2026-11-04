@@ -64,7 +64,7 @@ roadmap-plus-plus/
 │       ├── RoadmapPlusPlus.ArchitectureTests/       # границы модулей: только *.Contracts, без циклов
 │       ├── RoadmapPlusPlus.BuildingBlocks.Tests/    # Result, Error и их перевод в HTTP-ответ
 │       ├── RoadmapPlusPlus.Modules.Identity.Tests/  # правила команды: главы, выход, приглашения
-│       ├── RoadmapPlusPlus.Modules.Planning.Tests/
+│       ├── RoadmapPlusPlus.Modules.Planning.Tests/  # правила дерева: вложенность, даты
 │       ├── RoadmapPlusPlus.Modules.Knowledge.Tests/
 │       ├── RoadmapPlusPlus.Modules.Interchange.Tests/
 │       │   └── Fixtures/                            # bpmn-hackathon-roadmap.md, реальная таблица в MD

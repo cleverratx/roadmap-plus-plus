@@ -1,7 +1,12 @@
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using RoadmapPlusPlus.BuildingBlocks;
+using RoadmapPlusPlus.BuildingBlocks.Persistence;
+using RoadmapPlusPlus.Modules.Planning.Application.Items;
+using RoadmapPlusPlus.Modules.Planning.Endpoints;
+using RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence;
 
 namespace RoadmapPlusPlus.Modules.Planning
 {
@@ -9,10 +14,15 @@ namespace RoadmapPlusPlus.Modules.Planning
     {
         public void AddServices( IServiceCollection services, IConfiguration configuration )
         {
+            services.AddModuleDbContext<PlanningDbContext>();
+            services.TryAddSingleton( TimeProvider.System );
+            services.AddScoped<ItemVisibility>();
+            services.AddScoped<ItemService>();
         }
 
         public void MapEndpoints( IEndpointRouteBuilder endpoints )
         {
+            endpoints.MapItemEndpoints();
         }
     }
 }
