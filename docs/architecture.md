@@ -107,7 +107,7 @@ const item = useQuery({
 | Данные на фронте | TanStack Query; типы из OpenAPI делает openapi-typescript, клиент openapi-fetch | кэш и типы прямо из контракта |
 | UI-кит | свои компоненты на CSS Modules, а для диалога и контекстного меню Radix UI | доступность (фокус, клавиатура, Esc) без своей реализации |
 | Таблица задач | TanStack Table | своя таблица, вариант A из ADR-0001 |
-| Таймлайн | d3-scale + d3-zoom, своя отрисовка (SVG или Canvas) | плавный зум от года до минут; для быстрого прототипа подойдёт vis-timeline |
+| Таймлайн | d3-scale, d3-time и d3-zoom, своя отрисовка в SVG (виджет `widgets/timeline`) | плавный зум колёсиком и перетаскивание; сейчас от трёх лет до трёх дней, до часов и минут его расширит этап 3 |
 | Markdown на фронте | react-markdown + remark-gfm, редактор CodeMirror 6 или Milkdown | просмотр и правка базы знаний |
 | Инфраструктура | Docker Compose, Nginx | один `docker compose up`, статика и прокси `/api` |
 | Тесты | xUnit v3 на Microsoft.Testing.Platform, Testcontainers (Postgres), Vitest, Playwright | |
