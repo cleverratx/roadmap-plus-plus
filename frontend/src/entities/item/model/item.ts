@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api, unwrap, type components } from '@/shared/api'
 
 export type Item = components['schemas']['ItemResponse']
@@ -24,6 +24,7 @@ export function useItems(range: DateRange) {
   return useQuery({
     queryKey: itemsQueryKey(range),
     queryFn: ({ signal }) => unwrap(api.GET('/api/items', { params: { query: range }, signal })),
+    placeholderData: keepPreviousData,
   })
 }
 

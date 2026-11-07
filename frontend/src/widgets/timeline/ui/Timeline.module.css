@@ -87,3 +87,41 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+.block rect {
+  fill: currentColor;
+}
+
+.block[data-kind='macro'] rect {
+  fill-opacity: 0.16;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.block[data-kind='group'] rect {
+  fill-opacity: 0.45;
+}
+
+.block[data-kind='task'] rect {
+  fill-opacity: 0.2;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+.block text {
+  fill: var(--color-text);
+  font-size: 12px;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.block[data-kind='event'] text {
+  fill: var(--color-on-team);
+  font-weight: 600;
+}
+
+.status {
+  fill: var(--color-text-muted);
+  font-size: 13px;
+  text-anchor: middle;
+}

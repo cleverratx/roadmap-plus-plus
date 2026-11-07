@@ -13,6 +13,7 @@
   --color-accent: light-dark(#3b5bdb, #748ffc);
   --color-accent-hover: light-dark(#324cc0, #91a7ff);
   --color-accent-contrast: light-dark(#ffffff, #10131a);
+  --color-on-team: #ffffff;
   --color-danger: light-dark(#c92a2a, #ff8787);
   --color-success: light-dark(#2b8a3e, #69db7c);
   --color-overlay: rgb(0 0 0 / 40%);
