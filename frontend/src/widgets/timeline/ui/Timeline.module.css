@@ -125,3 +125,14 @@
   font-size: 13px;
   text-anchor: middle;
 }
+
+.block {
+  cursor: pointer;
+  outline: none;
+}
+
+.block[data-selected] rect,
+.block:focus-visible rect {
+  stroke: var(--color-text);
+  stroke-width: 2;
+}
