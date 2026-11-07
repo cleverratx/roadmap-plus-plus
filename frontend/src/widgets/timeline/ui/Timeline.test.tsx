@@ -1,9 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import type { ComponentProps } from 'react'
+import { describe, expect, it, vi } from 'vitest'
 import { json, mockApi } from '@/shared/lib/test/mock-api'
 import { Timeline } from './Timeline'
+
+type Handlers = Pick<ComponentProps<typeof Timeline>, 'onOpenItem' | 'onAddChild' | 'onDeleteItem' | 'onCreateAt'>
 
 const now = new Date(2026, 10, 4, 15, 30)
 const study = { id: 'study', color: '#2b8a3e' }
@@ -16,15 +19,15 @@ const items = [
   { id: 'lecture', workspaceId: 'study', parentId: null, kind: 'event', title: 'Лекция', startDate: '2026-11-10', endDate: '2026-11-10', position: 0 },
 ]
 
-function renderTimeline(hidden: ReadonlySet<string> = new Set()) {
+function renderTimeline(hidden: ReadonlySet<string> = new Set(), handlers: Handlers = {}) {
   const fetchMock = mockApi({ 'GET /api/items': () => json(items) })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <Timeline workspaces={[study, hackathons]} hiddenWorkspaceIds={hidden} now={now} />
+      <Timeline workspaces={[study, hackathons]} hiddenWorkspaceIds={hidden} now={now} {...handlers} />
     </QueryClientProvider>,
   )
-  return { svg: screen.getByRole('img', { name: /Таймлайн/ }), fetchMock }
+  return { svg: screen.getByRole('group', { name: /Таймлайн/ }), fetchMock }
 }
 
 describe('Timeline', () => {
@@ -75,5 +78,40 @@ describe('Timeline', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Сегодня' }))
     expect(range()).toContain('2026')
+  })
+
+  it('opens a block on click and offers its actions on right click', async () => {
+    const onOpenItem = vi.fn()
+    const onAddChild = vi.fn()
+    const onDeleteItem = vi.fn()
+    renderTimeline(new Set(), { onOpenItem, onAddChild, onDeleteItem })
+    const hackathon = await screen.findByRole('button', { name: 'Событие "Хакатон", 3 - 5 ноября 2026' })
+
+    fireEvent.click(hackathon)
+    expect(onOpenItem).toHaveBeenCalledWith(expect.objectContaining({ id: 'event' }))
+
+    fireEvent.contextMenu(hackathon)
+    const menu = screen.getByRole('menu')
+    expect(within(menu).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Открыть',
+      'Добавить группу',
+      'Добавить задачу',
+      'Удалить',
+    ])
+
+    await userEvent.click(within(menu).getByRole('menuitem', { name: 'Добавить задачу' }))
+    expect(onAddChild).toHaveBeenCalledWith(expect.objectContaining({ id: 'event' }), 'task')
+    expect(onDeleteItem).not.toHaveBeenCalled()
+  })
+
+  it('offers a new event on the day under the cursor', async () => {
+    const onCreateAt = vi.fn()
+    const { svg } = renderTimeline(new Set(), { onCreateAt })
+    await within(svg).findByText('Проектная деятельность')
+
+    fireEvent.contextMenu(svg, { clientX: 490 })
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Новое событие здесь' }))
+
+    expect(onCreateAt).toHaveBeenCalledWith('event', '2026-11-04')
   })
 })

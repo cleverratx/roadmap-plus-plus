@@ -12,6 +12,9 @@ export type DateRange = {
   to: string
 }
 
+/** Общий префикс всех запросов узлов: после правки сбрасываем его целиком, чтобы обновились и таймлайн, и панели. */
+export const allItemsQueryKey = ['items'] as const
+
 export function itemsQueryKey(range: DateRange) {
   return ['items', 'range', range.from, range.to] as const
 }
