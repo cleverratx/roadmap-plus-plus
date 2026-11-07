@@ -43,9 +43,16 @@
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
-  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
 }
 
 .team:hover {
   background: var(--color-surface-hover);
+}
+
+.off {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  text-decoration: line-through;
 }

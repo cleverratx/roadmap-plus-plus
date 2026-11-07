@@ -1,15 +1,26 @@
-import { Link } from 'react-router'
+import { useState } from 'react'
 import { useWorkspaces, WorkspaceDot } from '@/entities/workspace'
 import { JoinByLinkDialog } from '@/features/invitation-accept'
 import { CreateWorkspaceDialog } from '@/features/workspace-create'
 import { toFormErrors } from '@/shared/api'
-import { teamPath } from '@/shared/config'
+import { cx } from '@/shared/lib'
 import { Page } from '@/shared/ui'
 import { Timeline } from '@/widgets/timeline'
 import styles from './RoadmapPage.module.css'
 
 export function RoadmapPage() {
   const workspaces = useWorkspaces()
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set())
+
+  function toggle(workspaceId: string) {
+    setHidden((current) => {
+      const next = new Set(current)
+      if (!next.delete(workspaceId)) {
+        next.add(workspaceId)
+      }
+      return next
+    })
+  }
 
   if (workspaces.isPending) {
     return <Page title="Роадмап" />
@@ -43,17 +54,22 @@ export function RoadmapPage() {
 
   return (
     <Page title="Роадмап">
-      <ul className={styles.teams} aria-label="Ваши команды">
+      <ul className={styles.teams} aria-label="Показывать команды">
         {workspaces.data.map((workspace) => (
           <li key={workspace.id}>
-            <Link className={styles.team} to={teamPath(workspace.id)}>
+            <button
+              type="button"
+              className={cx(styles.team, hidden.has(workspace.id) && styles.off)}
+              aria-pressed={!hidden.has(workspace.id)}
+              onClick={() => toggle(workspace.id)}
+            >
               <WorkspaceDot color={workspace.color} />
               {workspace.name}
-            </Link>
+            </button>
           </li>
         ))}
       </ul>
-      <Timeline />
+      <Timeline workspaces={workspaces.data} hiddenWorkspaceIds={hidden} />
     </Page>
   )
 }
