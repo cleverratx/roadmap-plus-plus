@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RoadmapPlusPlus.BuildingBlocks;
+using RoadmapPlusPlus.Modules.Planning.Application.Links;
 using RoadmapPlusPlus.Modules.Planning.Domain.Items;
 using RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence;
 
@@ -152,7 +153,14 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                 .Select( i => new ItemResponse( i.Id, i.WorkspaceId, i.ParentId, i.Kind, i.Title, i.StartDate, i.EndDate, i.Position ) )
                 .ToListAsync( cancellationToken );
 
-            return new ItemDetails( ItemResponse.From( item ), item.DescriptionMd, await PathAsync( item, cancellationToken ), children );
+            List<LinkResponse> links = await db.Links
+                .AsNoTracking()
+                .Where( l => l.ItemId == item.Id )
+                .OrderBy( l => l.Position )
+                .Select( l => new LinkResponse( l.Id, l.Url, l.Title, l.Kind, l.Position ) )
+                .ToListAsync( cancellationToken );
+
+            return new ItemDetails( ItemResponse.From( item ), item.DescriptionMd, await PathAsync( item, cancellationToken ), children, links );
         }
 
         /// <summary>

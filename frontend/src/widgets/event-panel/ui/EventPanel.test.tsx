@@ -12,7 +12,9 @@ const hackathon = { id: 'event', workspaceId: 'team', parentId: 'macro', kind: '
 const day = { id: 'day', workspaceId: 'team', parentId: 'event', kind: 'group', title: 'День 1', startDate: '2026-12-30', endDate: '2026-12-30', position: 0 }
 const repo = { id: 'repo', workspaceId: 'team', parentId: 'event', kind: 'group', title: 'Организация и репозиторий', startDate: null, endDate: null, position: 1 }
 
-const details = { item: hackathon, descriptionMd: 'Командный хакатон СКБ', path: [macro], children: [day, repo] }
+const sheet = { id: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1AbC', title: '', kind: 'googleSheet', position: 0 }
+
+const details = { item: hackathon, descriptionMd: 'Командный хакатон СКБ', path: [macro], children: [day, repo], links: [sheet] }
 
 function renderPanel(handlers: Partial<ComponentProps<typeof EventPanel>> = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -42,6 +44,7 @@ describe('EventPanel', () => {
     expect(screen.getByText('СКБ')).toBeInTheDocument()
     expect(screen.getByText('Командный хакатон СКБ')).toBeInTheDocument()
     expect(screen.getByText(/Даты выходят за рамки "Проектная деятельность"/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'docs.google.com/spreadsheets/d/1AbC' })).toHaveAttribute('href', sheet.url)
 
     const inside = screen.getByRole('region', { name: 'Внутри' })
     expect(within(inside).getByRole('button', { name: /Организация и репозиторий/ })).toHaveTextContent('Группа, без дат')

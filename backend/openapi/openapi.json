@@ -922,6 +922,175 @@
           }
         }
       }
+    },
+    "/api/items/{itemId}/links": {
+      "post": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/{itemId}/links/{linkId}": {
+      "put": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1066,7 +1235,8 @@
           "item",
           "descriptionMd",
           "path",
-          "children"
+          "children",
+          "links"
         ],
         "type": "object",
         "properties": {
@@ -1086,6 +1256,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ItemResponse"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkResponse"
             }
           }
         }
@@ -1145,6 +1321,50 @@
               "string"
             ],
             "format": "date"
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "LinkKind": {
+        "enum": [
+          "other",
+          "googleSheet",
+          "googleDoc",
+          "googleSlides",
+          "googleDrive",
+          "tgPost",
+          "telegram",
+          "repo",
+          "figma",
+          "notion",
+          "miro"
+        ]
+      },
+      "LinkResponse": {
+        "required": [
+          "id",
+          "url",
+          "title",
+          "kind",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LinkKind"
           },
           "position": {
             "type": "integer",
@@ -1272,6 +1492,24 @@
           },
           "displayName": {
             "type": "string"
+          }
+        }
+      },
+      "SaveLinkRequest": {
+        "required": [
+          "url",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1406,6 +1644,9 @@
     },
     {
       "name": "Items"
+    },
+    {
+      "name": "Links"
     }
   ]
 }
