@@ -13,6 +13,15 @@ namespace RoadmapPlusPlus.Modules.Planning.Domain.Items
             "planning.workspace_not_found",
             "Команда не найдена." );
 
+        public static readonly Error LinkNotFound = Error.NotFound(
+            "planning.link_not_found",
+            "Ссылка не найдена." );
+
+        public static Error TooManyLinks( int max )
+        {
+            return Error.Validation( "planning.too_many_links", $"У одного узла может быть не больше {max} ссылок." );
+        }
+
         public static Error InvalidRequest( IReadOnlyDictionary<string, string[]> fields )
         {
             return Error.Validation( "planning.invalid_request", "Проверьте поля формы.", fields );

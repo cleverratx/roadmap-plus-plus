@@ -923,6 +923,154 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/items/{itemId}/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    itemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveLinkRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/items/{itemId}/links/{linkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    itemId: string;
+                    linkId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveLinkRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    itemId: string;
+                    linkId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -966,6 +1114,7 @@ export interface components {
             descriptionMd: string;
             path: components["schemas"]["ItemResponse"][];
             children: components["schemas"]["ItemResponse"][];
+            links: components["schemas"]["LinkResponse"][];
         };
         /** @enum {unknown} */
         ItemKind: "macro" | "event" | "group" | "task";
@@ -982,6 +1131,17 @@ export interface components {
             startDate: null | string;
             /** Format: date */
             endDate: null | string;
+            /** Format: int32 */
+            position: number;
+        };
+        /** @enum {unknown} */
+        LinkKind: "other" | "googleSheet" | "googleDoc" | "googleSlides" | "googleDrive" | "tgPost" | "telegram" | "repo" | "figma" | "notion" | "miro";
+        LinkResponse: {
+            /** Format: uuid */
+            id: string;
+            url: string;
+            title: string;
+            kind: components["schemas"]["LinkKind"];
             /** Format: int32 */
             position: number;
         };
@@ -1017,6 +1177,10 @@ export interface components {
             email: string;
             password: string;
             displayName: string;
+        };
+        SaveLinkRequest: {
+            url: string;
+            title: null | string;
         };
         SetHeadRequest: {
             isHead: boolean;

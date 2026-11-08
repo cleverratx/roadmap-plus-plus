@@ -36,8 +36,8 @@ describe('roadmap', () => {
     mockApi({
       ...common,
       'GET /api/items': () => json([hackathon]),
-      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [day] }),
-      'GET /api/items/day': () => json({ item: day, descriptionMd: '', path: [hackathon], children: [] }),
+      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [day], links: [] }),
+      'GET /api/items/day': () => json({ item: day, descriptionMd: '', path: [hackathon], children: [], links: [] }),
     })
     const router = renderApp('/')
 
@@ -59,8 +59,8 @@ describe('roadmap', () => {
     mockApi({
       ...common,
       'GET /api/items': () => json([]),
-      'POST /api/items': () => json({ item: created, descriptionMd: '', path: [], children: [] }, 201),
-      'GET /api/items/new': () => json({ item: created, descriptionMd: '', path: [], children: [] }),
+      'POST /api/items': () => json({ item: created, descriptionMd: '', path: [], children: [], links: [] }, 201),
+      'GET /api/items/new': () => json({ item: created, descriptionMd: '', path: [], children: [], links: [] }),
     })
     const router = renderApp('/')
 
@@ -77,7 +77,7 @@ describe('roadmap', () => {
     mockApi({
       ...common,
       'GET /api/items': () => json([hackathon]),
-      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [] }),
+      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [], links: [] }),
       'DELETE /api/items/event': () => new Response(null, { status: 204 }),
     })
     const router = renderApp('/?item=event')

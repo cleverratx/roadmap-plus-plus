@@ -1,3 +1,4 @@
+using RoadmapPlusPlus.Modules.Planning.Application.Links;
 using RoadmapPlusPlus.Modules.Planning.Domain.Items;
 
 namespace RoadmapPlusPlus.Modules.Planning.Application.Items
@@ -29,6 +30,11 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
         }
     }
 
-    /// <summary>Узел для панели: сам узел с описанием, путь от корня до родителя и прямые дети.</summary>
-    internal sealed record ItemDetails( ItemResponse Item, string DescriptionMd, IReadOnlyList<ItemResponse> Path, IReadOnlyList<ItemResponse> Children );
+    /// <summary>Узел для панели: сам узел с описанием, путь от корня до родителя, прямые дети и ссылки.</summary>
+    internal sealed record ItemDetails(
+        ItemResponse Item,
+        string DescriptionMd,
+        IReadOnlyList<ItemResponse> Path,
+        IReadOnlyList<ItemResponse> Children,
+        IReadOnlyList<LinkResponse> Links );
 }

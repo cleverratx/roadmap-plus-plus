@@ -11,3 +11,4 @@ export {
   type ItemKind,
 } from './model/item'
 export { childKindsOf, itemKindAccusative, itemKindLabels, newItemTitles, rootKinds } from './model/kinds'
+export { linkKindLabels, linkTitle, type Link, type LinkKind } from './model/links'

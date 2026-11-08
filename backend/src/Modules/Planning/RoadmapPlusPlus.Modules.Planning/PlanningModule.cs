@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using RoadmapPlusPlus.BuildingBlocks;
 using RoadmapPlusPlus.BuildingBlocks.Persistence;
 using RoadmapPlusPlus.Modules.Planning.Application.Items;
+using RoadmapPlusPlus.Modules.Planning.Application.Links;
 using RoadmapPlusPlus.Modules.Planning.Endpoints;
 using RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence;
 
@@ -18,11 +19,13 @@ namespace RoadmapPlusPlus.Modules.Planning
             services.TryAddSingleton( TimeProvider.System );
             services.AddScoped<ItemVisibility>();
             services.AddScoped<ItemService>();
+            services.AddScoped<LinkService>();
         }
 
         public void MapEndpoints( IEndpointRouteBuilder endpoints )
         {
             endpoints.MapItemEndpoints();
+            endpoints.MapLinkEndpoints();
         }
     }
 }

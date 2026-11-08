@@ -93,6 +93,52 @@ namespace RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Planning.Domain.Links.Link", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("url");
+
+                    b.HasKey("Id")
+                        .HasName("pk_links");
+
+                    b.HasIndex("ItemId", "Position")
+                        .HasDatabaseName("ix_links_item_id_position");
+
+                    b.ToTable("links", "planning");
+                });
+
             modelBuilder.Entity("RoadmapPlusPlus.Modules.Planning.Domain.Items.Item", b =>
                 {
                     b.HasOne("RoadmapPlusPlus.Modules.Planning.Domain.Items.Item", null)
@@ -100,6 +146,16 @@ namespace RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_items_items_parent_id");
+                });
+
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Planning.Domain.Links.Link", b =>
+                {
+                    b.HasOne("RoadmapPlusPlus.Modules.Planning.Domain.Items.Item", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_links_items_item_id");
                 });
 #pragma warning restore 612, 618
         }

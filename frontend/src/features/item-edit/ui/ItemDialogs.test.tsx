@@ -24,7 +24,7 @@ async function sentBody(fetchMock: ReturnType<typeof mockApi>, method: string) {
 
 describe('CreateItemDialog', () => {
   it('creates a root event on the clicked day in the chosen team', async () => {
-    const created = { item: { ...hackathon, id: 'new', title: 'Лекция', workspaceId: 'study' }, descriptionMd: '', path: [], children: [] }
+    const created = { item: { ...hackathon, id: 'new', title: 'Лекция', workspaceId: 'study' }, descriptionMd: '', path: [], children: [], links: [] }
     const fetchMock = mockApi({ 'POST /api/items': () => json(created, 201) })
     const onCreated = vi.fn()
     renderWithQuery(
@@ -55,7 +55,7 @@ describe('CreateItemDialog', () => {
 
   it('puts a child inside its parent and lets it go without dates', async () => {
     const fetchMock = mockApi({
-      'POST /api/items': () => json({ item: { ...hackathon, id: 'repo' }, descriptionMd: '', path: [hackathon], children: [] }, 201),
+      'POST /api/items': () => json({ item: { ...hackathon, id: 'repo' }, descriptionMd: '', path: [hackathon], children: [], links: [] }, 201),
     })
     renderWithQuery(
       <CreateItemDialog

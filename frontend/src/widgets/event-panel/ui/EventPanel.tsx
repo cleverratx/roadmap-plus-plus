@@ -11,6 +11,7 @@ import {
 } from '@/entities/item'
 import { WorkspaceDot, type WorkspaceSummary } from '@/entities/workspace'
 import { EditItemForm } from '@/features/item-edit'
+import { ItemLinks } from '@/features/item-links'
 import { toFormErrors } from '@/shared/api'
 import { Button, SidePanel } from '@/shared/ui'
 import styles from './EventPanel.module.css'
@@ -63,7 +64,7 @@ type ItemViewProps = Omit<EventPanelProps, 'itemId' | 'workspaces'> & {
 function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete }: ItemViewProps) {
   const [editing, setEditing] = useState(false)
   const childrenId = useId()
-  const { item, path, children, descriptionMd } = details
+  const { item, path, children, descriptionMd, links } = details
   const parent = path.at(-1)
   const childKinds = childKindsOf(item.kind)
 
@@ -123,6 +124,8 @@ function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete }:
             </div>
           </>
         )}
+
+        <ItemLinks itemId={item.id} links={links} />
 
         {childKinds.length > 0 && (
           <section className={styles.children} aria-labelledby={childrenId}>
