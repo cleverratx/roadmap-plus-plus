@@ -29,7 +29,24 @@ namespace RoadmapPlusPlus.Modules.Planning.Domain.Items
 
         public static Error CannotBeRoot( ItemKind kind )
         {
-            return Nesting( $"{Accusative( kind )} нельзя создать на верхнем уровне: она живёт внутри события." );
+            return Nesting( $"{Accusative( kind )} нельзя положить на верхний уровень: она живёт внутри события." );
+        }
+
+        /// <summary>Перенос внутрь самого себя или своего потомка замкнул бы дерево в кольцо и оторвал поддерево от корня.</summary>
+        public static Error MoveIntoItself()
+        {
+            const string message = "Нельзя переместить узел внутрь него самого или того, что лежит в нём.";
+            return Error.Validation( "planning.move_cycle", message, new Dictionary<string, string[]> { [ "parentId" ] = [ message ] } );
+        }
+
+        /// <summary>
+        /// Поддерево целиком принадлежит одной команде. Перенос в другую команду сменил бы команду у всех потомков,
+        /// а с ролями из ADR-0003 и их доступ, поэтому пока его нет.
+        /// </summary>
+        public static Error MoveAcrossWorkspaces()
+        {
+            const string message = "Переносить узлы между командами пока нельзя.";
+            return Error.Validation( "planning.move_across_workspaces", message, new Dictionary<string, string[]> { [ "parentId" ] = [ message ] } );
         }
 
         public static Error CannotContain( ItemKind parent, ItemKind child )

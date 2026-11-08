@@ -30,7 +30,7 @@ namespace RoadmapPlusPlus.Modules.Planning.Domain.Items
 
         public string DescriptionMd { get; private set; }
 
-        /// <summary>Порядок среди соседей; новый узел встаёт в конец. Перестановку добавит ветка <c>planning-item-move</c>.</summary>
+        /// <summary>Порядок среди соседей; новый узел встаёт в конец, а переставляет узлы <see cref="PlaceAt"/>.</summary>
         public int Position { get; private set; }
 
         public DateTimeOffset CreatedAt { get; private set; }
@@ -61,6 +61,47 @@ namespace RoadmapPlusPlus.Modules.Planning.Domain.Items
         {
             Apply( content );
             UpdatedAt = now;
+        }
+
+        /// <summary>
+        /// Переносит узел под другого родителя или на верхний уровень его команды. <paramref name="parentPath"/> это id
+        /// от корня до нового родителя включительно: если в нём есть сам узел, перенос замкнул бы дерево в кольцо.
+        /// Порядок среди новых соседей задаёт <see cref="PlaceAt"/>, его выставляет сервис для всех соседей сразу.
+        /// </summary>
+        public Result MoveTo( Item? parent, IReadOnlyCollection<Guid> parentPath, DateTimeOffset now )
+        {
+            if ( parent is null )
+            {
+                if ( !ItemNesting.CanBeRoot( Kind ) )
+                {
+                    return PlanningErrors.CannotBeRoot( Kind );
+                }
+            }
+            else if ( parent.WorkspaceId != WorkspaceId )
+            {
+                return PlanningErrors.MoveAcrossWorkspaces();
+            }
+            else if ( parent.Id == Id || parentPath.Contains( Id ) )
+            {
+                return PlanningErrors.MoveIntoItself();
+            }
+            else if ( !ItemNesting.CanContain( parent.Kind, Kind ) )
+            {
+                return PlanningErrors.CannotContain( parent.Kind, Kind );
+            }
+
+            if ( ParentId != parent?.Id )
+            {
+                ParentId = parent?.Id;
+                UpdatedAt = now;
+            }
+
+            return Result.Success();
+        }
+
+        public void PlaceAt( int position )
+        {
+            Position = position;
         }
 
         private static Item New( Guid workspaceId, Guid? parentId, ItemKind kind, ItemContent content, int position, DateTimeOffset now )

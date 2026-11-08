@@ -1,6 +1,3 @@
-import type { QueryClient } from '@tanstack/react-query'
-import { allItemsQueryKey, itemQueryKey, type ItemDetails } from '@/entities/item'
-
 export type ItemFieldsValue = {
   title: string
   startDate: string
@@ -29,8 +26,3 @@ export function checkItemFields(value: ItemFieldsValue, isRoot: boolean): Record
   return {}
 }
 
-/** Кладёт свежий узел в кэш и просит перечитать остальные запросы узлов: таймлайн, панели родителя и детей. */
-export function refreshItems(queryClient: QueryClient, details: ItemDetails) {
-  queryClient.setQueryData(itemQueryKey(details.item.id), details)
-  void queryClient.invalidateQueries({ queryKey: allItemsQueryKey, predicate: (query) => query.queryKey[1] !== details.item.id })
-}

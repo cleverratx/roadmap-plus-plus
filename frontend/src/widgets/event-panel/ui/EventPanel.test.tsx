@@ -27,6 +27,7 @@ function renderPanel(handlers: Partial<ComponentProps<typeof EventPanel>> = {}) 
         onClose={vi.fn()}
         onAddChild={vi.fn()}
         onDelete={vi.fn()}
+        onMove={vi.fn()}
         {...handlers}
       />
     </QueryClientProvider>,
@@ -47,26 +48,56 @@ describe('EventPanel', () => {
     expect(screen.getByRole('link', { name: 'docs.google.com/spreadsheets/d/1AbC' })).toHaveAttribute('href', sheet.url)
 
     const inside = screen.getByRole('region', { name: 'Внутри' })
-    expect(within(inside).getByRole('button', { name: /Организация и репозиторий/ })).toHaveTextContent('Группа, без дат')
+    expect(within(inside).getByRole('button', { name: /^Организация и репозиторий/ })).toHaveTextContent('Группа, без дат')
 
-    await userEvent.click(within(inside).getByRole('button', { name: /День 1/ }))
+    await userEvent.click(within(inside).getByRole('button', { name: /^День 1/ }))
     expect(onOpen).toHaveBeenCalledWith('day')
 
     await userEvent.click(screen.getByRole('button', { name: 'Проектная деятельность' }))
     expect(onOpen).toHaveBeenCalledWith('macro')
   })
 
-  it('asks the page to add a child of the chosen kind or to delete the item', async () => {
+  it('asks the page to add a child of the chosen kind, to move or to delete the item', async () => {
     mockApi({ 'GET /api/items/event': () => json(details) })
     const onAddChild = vi.fn()
     const onDelete = vi.fn()
-    renderPanel({ onAddChild, onDelete })
+    const onMove = vi.fn()
+    renderPanel({ onAddChild, onDelete, onMove })
 
     await userEvent.click(await screen.findByRole('button', { name: '+ Задача' }))
     expect(onAddChild).toHaveBeenCalledWith(hackathon, 'task')
 
+    await userEvent.click(screen.getByRole('button', { name: 'Переместить' }))
+    expect(onMove).toHaveBeenCalledWith(hackathon)
+
     await userEvent.click(screen.getByRole('button', { name: 'Удалить' }))
     expect(onDelete).toHaveBeenCalledWith(hackathon)
+  })
+
+  it('reorders what is inside', async () => {
+    let current = details
+    const fetchMock = mockApi({
+      'GET /api/items/event': () => json(current),
+      'POST /api/items/day/move': () => {
+        current = { ...details, children: [repo, day] }
+        return json({ item: day, descriptionMd: '', path: [macro, hackathon], children: [], links: [] })
+      },
+    })
+    renderPanel()
+
+    expect(await screen.findByRole('button', { name: 'Поднять "День 1"' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Опустить "Организация и репозиторий"' })).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Опустить "День 1"' }))
+
+    const inside = screen.getByRole('region', { name: 'Внутри' })
+    await vi.waitFor(() =>
+      expect(within(inside).getAllByRole('listitem').map((row) => row.textContent)).toEqual([
+        expect.stringContaining('Организация и репозиторий'),
+        expect.stringContaining('День 1'),
+      ]),
+    )
+    const move = fetchMock.mock.calls.map(([request]) => request as Request).find((request) => request.method === 'POST')!
+    expect(await move.json()).toEqual({ parentId: 'event', position: 1 })
   })
 
   it('edits the item in place', async () => {

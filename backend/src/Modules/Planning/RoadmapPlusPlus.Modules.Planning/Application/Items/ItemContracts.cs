@@ -14,6 +14,18 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
 
     internal sealed record UpdateItemRequest( string Title, DateOnly? StartDate, DateOnly? EndDate, string? DescriptionMd );
 
+    /// <summary>
+    /// Куда перенести узел. <c>ParentId = null</c> значит верхний уровень его команды. <c>Position</c> это место среди
+    /// новых соседей без самого узла, с нуля; без него или за пределами списка узел встаёт в конец или в начало.
+    /// Чтобы просто поменять порядок, передают того же родителя и новое место.
+    /// </summary>
+    internal sealed record MoveItemRequest( Guid? ParentId, int? Position );
+
+    /// <summary>Узел, в который можно перенести, и названия его предков от корня, чтобы показать, где он лежит.</summary>
+    internal sealed record MoveTarget( ItemResponse Item, IReadOnlyList<string> Path );
+
+    internal sealed record MoveTargets( bool CanBeRoot, Guid? CurrentParentId, IReadOnlyList<MoveTarget> Parents );
+
     internal sealed record ItemResponse(
         Guid Id,
         Guid WorkspaceId,

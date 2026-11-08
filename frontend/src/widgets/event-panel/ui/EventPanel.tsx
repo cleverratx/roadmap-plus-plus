@@ -12,6 +12,7 @@ import {
 import { WorkspaceDot, type WorkspaceSummary } from '@/entities/workspace'
 import { EditItemForm } from '@/features/item-edit'
 import { ItemLinks } from '@/features/item-links'
+import { useMoveItem } from '@/features/item-move'
 import { toFormErrors } from '@/shared/api'
 import { Button, SidePanel } from '@/shared/ui'
 import styles from './EventPanel.module.css'
@@ -23,9 +24,10 @@ type EventPanelProps = {
   onClose: () => void
   onAddChild: (parent: Item, kind: ItemKind) => void
   onDelete: (item: Item) => void
+  onMove: (item: Item) => void
 }
 
-export function EventPanel({ itemId, workspaces, onOpen, onClose, onAddChild, onDelete }: EventPanelProps) {
+export function EventPanel({ itemId, workspaces, onOpen, onClose, onAddChild, onDelete, onMove }: EventPanelProps) {
   const details = useItem(itemId)
 
   if (details.isPending) {
@@ -52,6 +54,7 @@ export function EventPanel({ itemId, workspaces, onOpen, onClose, onAddChild, on
       onClose={onClose}
       onAddChild={onAddChild}
       onDelete={onDelete}
+      onMove={onMove}
     />
   )
 }
@@ -61,8 +64,9 @@ type ItemViewProps = Omit<EventPanelProps, 'itemId' | 'workspaces'> & {
   workspace?: WorkspaceSummary
 }
 
-function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete }: ItemViewProps) {
+function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete, onMove }: ItemViewProps) {
   const [editing, setEditing] = useState(false)
+  const reorder = useMoveItem()
   const childrenId = useId()
   const { item, path, children, descriptionMd, links } = details
   const parent = path.at(-1)
@@ -118,6 +122,7 @@ function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete }:
             )}
             <div className={styles.actions}>
               <Button onClick={() => setEditing(true)}>Изменить</Button>
+              <Button onClick={() => onMove(item)}>Переместить</Button>
               <Button variant="ghost" className={styles.danger} onClick={() => onDelete(item)}>
                 Удалить
               </Button>
@@ -143,8 +148,8 @@ function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete }:
               <p className={styles.muted}>Пока ничего.</p>
             ) : (
               <ul className={styles.list}>
-                {children.map((child) => (
-                  <li key={child.id}>
+                {children.map((child, index) => (
+                  <li key={child.id} className={styles.childRow}>
                     <button type="button" className={styles.child} onClick={() => onOpen(child.id)}>
                       <span className={styles.childTitle}>{child.title}</span>
                       <span className={styles.muted}>
@@ -152,9 +157,32 @@ function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete }:
                         {isOutside(child, item) && <span className={styles.outside}>, вне дат</span>}
                       </span>
                     </button>
+                    <div className={styles.order}>
+                      <Button
+                        variant="ghost"
+                        aria-label={`Поднять "${child.title}"`}
+                        disabled={index === 0 || reorder.isPending}
+                        onClick={() => reorder.mutate({ itemId: child.id, parentId: item.id, position: index - 1 })}
+                      >
+                        Выше
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        aria-label={`Опустить "${child.title}"`}
+                        disabled={index === children.length - 1 || reorder.isPending}
+                        onClick={() => reorder.mutate({ itemId: child.id, parentId: item.id, position: index + 1 })}
+                      >
+                        Ниже
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
+            )}
+            {reorder.isError && (
+              <p className={styles.error} role="alert">
+                {toFormErrors(reorder.error).message}
+              </p>
             )}
           </section>
         )}

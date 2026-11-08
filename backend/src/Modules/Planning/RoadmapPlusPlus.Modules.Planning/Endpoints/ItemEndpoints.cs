@@ -31,6 +31,15 @@ namespace RoadmapPlusPlus.Modules.Planning.Endpoints
                 .ProducesProblem( StatusCodes.Status400BadRequest )
                 .ProducesProblem( StatusCodes.Status404NotFound );
 
+            items.MapPost( "/{itemId:guid}/move", async ( Guid itemId, MoveItemRequest request, ItemService service, CancellationToken cancellationToken ) =>
+                    ( await service.MoveAsync( itemId, request, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status400BadRequest )
+                .ProducesProblem( StatusCodes.Status404NotFound );
+
+            items.MapGet( "/{itemId:guid}/move-targets", async ( Guid itemId, ItemService service, CancellationToken cancellationToken ) =>
+                    ( await service.MoveTargetsAsync( itemId, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status404NotFound );
+
             items.MapDelete( "/{itemId:guid}", async ( Guid itemId, ItemService service, CancellationToken cancellationToken ) =>
                     ( await service.DeleteAsync( itemId, cancellationToken ) ).ToHttpResult() )
                 .ProducesProblem( StatusCodes.Status404NotFound );
