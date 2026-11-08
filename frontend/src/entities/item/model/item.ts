@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, type QueryClient } from '@tanstack/react-query'
 import { api, unwrap, type components } from '@/shared/api'
 
 export type Item = components['schemas']['ItemResponse']
@@ -36,4 +36,13 @@ export function useItem(itemId: string) {
     queryKey: itemQueryKey(itemId),
     queryFn: ({ signal }) => unwrap(api.GET('/api/items/{itemId}', { params: { path: { itemId } }, signal })),
   })
+}
+
+/**
+ * Кладёт свежий узел, который вернул сервер после правки, в кэш и просит перечитать остальные запросы узлов:
+ * таймлайн, панели родителя и детей. Сам узел повторно не запрашивается, он уже свежий.
+ */
+export function rememberItem(queryClient: QueryClient, details: ItemDetails) {
+  queryClient.setQueryData(itemQueryKey(details.item.id), details)
+  void queryClient.invalidateQueries({ queryKey: allItemsQueryKey, predicate: (query) => query.queryKey[1] !== details.item.id })
 }

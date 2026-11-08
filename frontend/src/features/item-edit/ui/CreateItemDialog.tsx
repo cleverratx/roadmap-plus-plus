@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { childKindsOf, itemKindLabels, newItemTitles, type Item, type ItemDetails, type ItemKind } from '@/entities/item'
+import { childKindsOf, itemKindLabels, newItemTitles, rememberItem, type Item, type ItemDetails, type ItemKind } from '@/entities/item'
 import { WorkspaceDot, type WorkspaceSummary } from '@/entities/workspace'
 import { api, toFormErrors, unwrap } from '@/shared/api'
 import { Button, ChoiceGroup, Dialog } from '@/shared/ui'
-import { checkItemFields, refreshItems, toItemBody, type ItemFieldsValue } from '../model/fields'
+import { checkItemFields, toItemBody, type ItemFieldsValue } from '../model/fields'
 import { ItemFields } from './ItemFields'
 import styles from './ItemForm.module.css'
 
@@ -46,7 +46,7 @@ export function CreateItemDialog({ draft, workspaces, onClose, onCreated }: Crea
         }),
       ),
     onSuccess: (details) => {
-      refreshItems(queryClient, details)
+      rememberItem(queryClient, details)
       onCreated(details)
     },
   })

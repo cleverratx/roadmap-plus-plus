@@ -81,7 +81,8 @@ roadmap-plus-plus/
 │       ├── widgets/                         # app-header, timeline, event-panel, task-table, agenda-list,
 │       │                                    # kb-viewer, assistant-panel
 │       ├── features/                        # auth, workspace-create, workspace-edit, workspace-invite,
-│       │                                    # workspace-members, invitation-accept, timeline-zoom, item-edit, task-status,
+│       │                                    # workspace-members, invitation-accept, timeline-zoom, item-edit,
+│       │                                    # item-links, item-move, task-status,
 │       │                                    # md-export, md-import, changeset-review
 │       ├── entities/                        # session, workspace, item, member, field, kb-doc
 │       └── shared/                          # api (типы из OpenAPI, клиент, ошибки), ui (кит),

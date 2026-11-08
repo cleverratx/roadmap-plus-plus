@@ -43,6 +43,7 @@ type TimelineProps = {
   onOpenItem?: (item: Item) => void
   onAddChild?: (parent: Item, kind: ItemKind) => void
   onDeleteItem?: (item: Item) => void
+  onMoveItem?: (item: Item) => void
   onCreateAt?: (kind: ItemKind, date: string) => void
 }
 
@@ -57,6 +58,7 @@ export function Timeline({
   onOpenItem,
   onAddChild,
   onDeleteItem,
+  onMoveItem,
   onCreateAt,
 }: TimelineProps) {
   const [now] = useState(() => nowProp ?? new Date())
@@ -153,6 +155,7 @@ export function Timeline({
         label: `Добавить ${itemKindAccusative[kind]}`,
         onSelect: () => onAddChild?.(item, kind),
       })),
+      { label: 'Переместить в...', onSelect: () => onMoveItem?.(item) },
       'separator',
       { label: 'Удалить', danger: true, onSelect: () => onDeleteItem?.(item) },
     ]

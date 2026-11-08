@@ -46,7 +46,7 @@ describe('roadmap', () => {
     const panel = await screen.findByRole('complementary', { name: 'Хакатон' })
     expect(router.state.location.search).toBe('?item=event')
 
-    await userEvent.click(within(panel).getByRole('button', { name: /День 1/ }))
+    await userEvent.click(within(panel).getByRole('button', { name: /^День 1/ }))
     expect(await screen.findByRole('complementary', { name: 'День 1' })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Закрыть панель' }))

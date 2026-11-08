@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using RoadmapPlusPlus.BuildingBlocks;
 using RoadmapPlusPlus.Modules.Planning.Application.Links;
 using RoadmapPlusPlus.Modules.Planning.Domain.Items;
@@ -127,6 +128,123 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
             db.Items.Remove( item );
             await db.SaveChangesAsync( cancellationToken );
             return Result.Success();
+        }
+
+        /// <summary>
+        /// Переносит узел к другому родителю той же команды или меняет его место среди соседей. Переносы внутри команды идут
+        /// по очереди под advisory-блокировкой: иначе два встречных переноса ("A в B" и "B в A") прошли бы проверку на кольцо
+        /// каждый по отдельности и вместе замкнули бы дерево.
+        /// </summary>
+        public async Task<Result<ItemDetails>> MoveAsync( Guid itemId, MoveItemRequest request, CancellationToken cancellationToken )
+        {
+            Item? item = await FindVisibleAsync( itemId, cancellationToken );
+            if ( item is null )
+            {
+                return PlanningErrors.ItemNotFound;
+            }
+
+            await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync( cancellationToken );
+            await db.Database.ExecuteSqlAsync( $"SELECT pg_advisory_xact_lock(hashtextextended({item.WorkspaceId.ToString()}, 0))", cancellationToken );
+            await db.Entry( item ).ReloadAsync( cancellationToken );
+            if ( db.Entry( item ).State == EntityState.Detached )
+            {
+                return PlanningErrors.ItemNotFound;
+            }
+
+            Item? parent = null;
+            List<Guid> parentPath = [];
+            if ( request.ParentId is { } parentId )
+            {
+                parent = await FindVisibleAsync( parentId, cancellationToken );
+                if ( parent is null )
+                {
+                    return PlanningErrors.ItemNotFound;
+                }
+
+                parentPath = [ .. ( await PathAsync( parent, cancellationToken ) ).Select( p => p.Id ), parent.Id ];
+            }
+
+            Guid? oldParentId = item.ParentId;
+            Result moved = item.MoveTo( parent, parentPath, time.GetUtcNow() );
+            if ( !moved.IsSuccess )
+            {
+                return moved.Error;
+            }
+
+            List<Item> siblings = await SiblingsAsync( item.WorkspaceId, item.ParentId, item.Id, cancellationToken );
+            siblings.Insert( Math.Clamp( request.Position ?? siblings.Count, 0, siblings.Count ), item );
+            Renumber( siblings );
+
+            if ( oldParentId != item.ParentId )
+            {
+                Renumber( await SiblingsAsync( item.WorkspaceId, oldParentId, item.Id, cancellationToken ) );
+            }
+
+            await db.SaveChangesAsync( cancellationToken );
+            await transaction.CommitAsync( cancellationToken );
+            return await DetailsAsync( item, cancellationToken );
+        }
+
+        /// <summary>
+        /// Куда можно перенести узел: узлы его команды, которые могут его вместить по правилам вложенности, кроме него самого
+        /// и его потомков. Идут в порядке дерева, у каждого путь от корня, чтобы в списке было понятно, где он лежит.
+        /// </summary>
+        public async Task<Result<MoveTargets>> MoveTargetsAsync( Guid itemId, CancellationToken cancellationToken )
+        {
+            Item? item = await FindVisibleAsync( itemId, cancellationToken );
+            if ( item is null )
+            {
+                return PlanningErrors.ItemNotFound;
+            }
+
+            IQueryable<Item> visible = await visibility.VisibleItemsAsync( cancellationToken );
+            List<ItemResponse> team = await visible
+                .AsNoTracking()
+                .Where( i => i.WorkspaceId == item.WorkspaceId )
+                .OrderBy( i => i.Position )
+                .Select( i => new ItemResponse( i.Id, i.WorkspaceId, i.ParentId, i.Kind, i.Title, i.StartDate, i.EndDate, i.Position ) )
+                .ToListAsync( cancellationToken );
+
+            ILookup<Guid?, ItemResponse> childrenOf = team.ToLookup( i => i.ParentId );
+            List<MoveTarget> parents = [];
+            Stack<(ItemResponse Node, string[] Path)> pending = new( childrenOf[ null ].Reverse().Select( root => (root, Array.Empty<string>()) ) );
+
+            while ( pending.TryPop( out (ItemResponse Node, string[] Path) next ) )
+            {
+                if ( next.Node.Id == item.Id )
+                {
+                    continue;
+                }
+
+                if ( ItemNesting.CanContain( next.Node.Kind, item.Kind ) )
+                {
+                    parents.Add( new MoveTarget( next.Node, next.Path ) );
+                }
+
+                string[] childPath = [ .. next.Path, next.Node.Title ];
+                foreach ( ItemResponse child in childrenOf[ next.Node.Id ].Reverse() )
+                {
+                    pending.Push( (child, childPath) );
+                }
+            }
+
+            return new MoveTargets( ItemNesting.CanBeRoot( item.Kind ), item.ParentId, parents );
+        }
+
+        private Task<List<Item>> SiblingsAsync( Guid workspaceId, Guid? parentId, Guid exceptId, CancellationToken cancellationToken )
+        {
+            return db.Items
+                .Where( i => i.WorkspaceId == workspaceId && i.ParentId == parentId && i.Id != exceptId )
+                .OrderBy( i => i.Position )
+                .ToListAsync( cancellationToken );
+        }
+
+        private static void Renumber( List<Item> siblings )
+        {
+            for ( int position = 0; position < siblings.Count; position++ )
+            {
+                siblings[ position ].PlaceAt( position );
+            }
         }
 
         private async Task<Item?> FindVisibleAsync( Guid itemId, CancellationToken cancellationToken )

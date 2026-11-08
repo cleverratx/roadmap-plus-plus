@@ -4,6 +4,7 @@ import type { Item, ItemKind } from '@/entities/item'
 import { useWorkspaces, WorkspaceDot } from '@/entities/workspace'
 import { JoinByLinkDialog } from '@/features/invitation-accept'
 import { CreateItemDialog, DeleteItemDialog, type ItemDraft } from '@/features/item-edit'
+import { MoveItemDialog } from '@/features/item-move'
 import { CreateWorkspaceDialog } from '@/features/workspace-create'
 import { toFormErrors } from '@/shared/api'
 import { cx } from '@/shared/lib'
@@ -21,6 +22,7 @@ export function RoadmapPage() {
   const [params, setParams] = useSearchParams()
   const [draft, setDraft] = useState<ItemDraft | null>(null)
   const [deleting, setDeleting] = useState<Item | null>(null)
+  const [moving, setMoving] = useState<Item | null>(null)
   const selectedId = params.get(ITEM_PARAM)
 
   function toggle(workspaceId: string) {
@@ -116,6 +118,7 @@ export function RoadmapPage() {
             onOpenItem={(item) => open(item.id)}
             onAddChild={addChild}
             onDeleteItem={setDeleting}
+            onMoveItem={setMoving}
             onCreateAt={createAt}
           />
         </Page>
@@ -130,6 +133,7 @@ export function RoadmapPage() {
           onClose={() => open(null)}
           onAddChild={addChild}
           onDelete={setDeleting}
+          onMove={setMoving}
         />
       )}
 
@@ -152,6 +156,17 @@ export function RoadmapPage() {
           onDeleted={(item) => {
             setDeleting(null)
             forget(item)
+          }}
+        />
+      )}
+
+      {moving && (
+        <MoveItemDialog
+          item={moving}
+          onClose={() => setMoving(null)}
+          onMoved={(details) => {
+            setMoving(null)
+            open(details.item.id)
           }}
         />
       )}

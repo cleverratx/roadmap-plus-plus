@@ -1,6 +1,7 @@
 export { formatItemDates, isOutside } from './model/dates'
 export {
   allItemsQueryKey,
+  rememberItem,
   itemQueryKey,
   itemsQueryKey,
   useItem,

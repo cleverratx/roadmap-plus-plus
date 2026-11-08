@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import type { ItemDetails } from '@/entities/item'
+import { rememberItem, type ItemDetails } from '@/entities/item'
 import { api, toFormErrors, unwrap } from '@/shared/api'
 import { Button } from '@/shared/ui'
-import { checkItemFields, refreshItems, toItemBody, type ItemFieldsValue } from '../model/fields'
+import { checkItemFields, toItemBody, type ItemFieldsValue } from '../model/fields'
 import { ItemFields } from './ItemFields'
 import styles from './ItemForm.module.css'
 
@@ -26,7 +26,7 @@ export function EditItemForm({ details, onDone }: EditItemFormProps) {
   const update = useMutation({
     mutationFn: () => unwrap(api.PUT('/api/items/{itemId}', { params: { path: { itemId: item.id } }, body: toItemBody(value) })),
     onSuccess: (updated) => {
-      refreshItems(queryClient, updated)
+      rememberItem(queryClient, updated)
       onDone()
     },
   })
