@@ -12,7 +12,7 @@ docker compose up -d --build
 # OpenAPI: http://localhost:8080/api/openapi/v1.json
 ```
 
-`docker compose` сам подхватывает `compose.override.yaml` с настройками для локальной работы: API запускается в режиме Development, а БД открыта на хосте как `127.0.0.1:5433`. Порт можно поменять через `DB_PORT` в `.env`, а 5432 мы не берём, потому что его часто занимает локальный PostgreSQL. На сервере override не нужен, там запускаем `docker compose -f compose.yaml up -d --build` и задаём в `.env` свой пароль БД.
+`docker compose` сам подхватывает `compose.override.yaml` с настройками для локальной работы: API запускается в режиме Development, а БД открыта на хосте как `127.0.0.1:5433`. Порт можно поменять через `DB_PORT` в `.env`, а 5432 мы не берём, потому что его часто занимает локальный PostgreSQL. Порт интерфейса 8080 тоже открывает override, сам `compose.yaml` наружу ничего не публикует. На сервере override не нужен: там вместо него подключается `deploy/compose.prod.yaml` с Caddy и HTTPS, а выкладывает всё скрипт, как описано в [docs/deploy.md](deploy.md).
 
 При старте API сам применяет миграции всех модулей, а схему каждого модуля создаёт его первая миграция. Если базу нужно сбросить начисто, хватит `docker compose down -v`.
 

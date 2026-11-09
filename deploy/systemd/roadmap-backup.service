@@ -1,0 +1,9 @@
+[Unit]
+Description=Roadmap++: дамп базы с проверкой восстановления
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/roadmap-plus-plus
+ExecStart=/usr/bin/env bash /opt/roadmap-plus-plus/deploy/scripts/backup.sh

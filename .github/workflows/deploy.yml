@@ -1,0 +1,87 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - deploy/**
+      - compose*.yaml
+      - backend/Dockerfile
+      - frontend/Dockerfile
+      - .github/workflows/deploy.yml
+  pull_request:
+    paths:
+      - deploy/**
+      - compose*.yaml
+      - backend/Dockerfile
+      - frontend/Dockerfile
+      - .github/workflows/deploy.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  production-stack:
+    name: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Shellcheck
+        working-directory: deploy/scripts
+        run: shellcheck common.sh backup.sh verify-backup.sh restore.sh deploy.sh
+
+      - name: Prepare .env
+        run: |
+          {
+            echo "POSTGRES_DB=roadmap"
+            echo "POSTGRES_USER=roadmap"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "DOMAIN=localhost"
+            echo "ACME_EMAIL=ci@example.com"
+          } > .env
+
+      - name: Deploy
+        run: bash deploy/scripts/deploy.sh --current
+
+      - name: HTTPS, redirect and session cookie
+        run: |
+          curl -fsSk https://localhost/api/health | grep -qx Healthy
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost/)" = 308
+          headers="$(curl -fsSk -D - -o /dev/null -H 'Content-Type: application/json' \
+            -d '{"email":"kept@example.com","password":"correct horse","displayName":"Kept"}' \
+            https://localhost/api/auth/register)"
+          echo "$headers" | grep -i '^set-cookie: roadmap_session=' | grep -qi '; secure'
+          echo "$headers" | grep -qi '^strict-transport-security:'
+
+      - name: Back up and restore
+        run: |
+          bash deploy/scripts/backup.sh
+          dump="$(ls -t backups/roadmap-*.dump | head -n 1)"
+          curl -fsSk -o /dev/null -H 'Content-Type: application/json' \
+            -d '{"email":"lost@example.com","password":"correct horse","displayName":"Lost"}' \
+            https://localhost/api/auth/register
+          bash deploy/scripts/restore.sh "$dump" --yes
+          login() {
+            curl -sk -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' \
+              -d "{\"email\":\"$1\",\"password\":\"correct horse\"}" https://localhost/api/auth/login
+          }
+          test "$(login kept@example.com)" = 200
+          test "$(login lost@example.com)" = 400
+
+      - name: Redeploy over live data
+        run: |
+          bash deploy/scripts/deploy.sh --current
+          ls backups/ | grep -q before-deploy
+
+      - name: Logs
+        if: failure()
+        run: docker compose -f compose.yaml -f deploy/compose.prod.yaml logs --no-color

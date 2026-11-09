@@ -109,8 +109,8 @@ const item = useQuery({
 | Таблица задач | TanStack Table | своя таблица, вариант A из ADR-0001 |
 | Таймлайн | d3-scale, d3-time и d3-zoom, своя отрисовка в SVG (виджет `widgets/timeline`) | плавный зум колёсиком и перетаскивание; сейчас от трёх лет до трёх дней, до часов и минут его расширит этап 3 |
 | Markdown на фронте | react-markdown + remark-gfm, редактор CodeMirror 6 или Milkdown | просмотр и правка базы знаний |
-| Инфраструктура | Docker Compose, Nginx | один `docker compose up`, статика и прокси `/api` |
+| Инфраструктура | Docker Compose, Nginx, Caddy | один `docker compose up`, статика и прокси `/api`; на сервере Caddy сам получает сертификат Let's Encrypt и держит HTTPS |
 | Тесты | xUnit v3 на Microsoft.Testing.Platform, Testcontainers (Postgres), Vitest, Playwright | |
 | CI | GitHub Actions | сборка и тесты на каждый PR |
 
-Для хостинга хватит слабого VPS: API, Postgres и Nginx укладываются примерно в 1-2 ГБ памяти. Модели на этом сервере не запускаем, ИИ работает через внешний API или через Ollama на чьём-нибудь ПК.
+Для хостинга хватит слабого VPS: API, Postgres, Nginx и Caddy укладываются примерно в 1-2 ГБ памяти. Как выкладывать, снимать бэкапы и восстанавливаться, описано в [deploy.md](deploy.md). Модели на этом сервере не запускаем, ИИ работает через внешний API или через Ollama на чьём-нибудь ПК.

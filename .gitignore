@@ -15,6 +15,9 @@ dist/
 *.tsbuildinfo
 npm-debug.log*
 
+# --- Бэкапы базы ---
+backups/
+
 # --- Секреты и окружение ---
 .env
 .env.*
