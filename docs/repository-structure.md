@@ -89,8 +89,11 @@ roadmap-plus-plus/
 │                                            # lib (утилиты, настройка тестов), config (пути)
 │
 ├── deploy/
+│   ├── compose.prod.yaml                    # добавка для сервера: Caddy с HTTPS перед Nginx
+│   ├── caddy/Caddyfile                      # домен, сертификат Let's Encrypt, заголовки безопасности
 │   ├── nginx/default.conf                   # статика фронта и прокси /api на api:8080
-│   └── scripts/                             # деплой, бэкап БД
+│   ├── scripts/                             # выкладка, бэкап с проверкой, восстановление
+│   └── systemd/                             # таймер ежедневного бэкапа
 │
 └── docs/
     ├── product.md                           # что умеет сервис и каким он задуман
@@ -98,6 +101,7 @@ roadmap-plus-plus/
     ├── architecture.md                      # модули, границы, контракт API, ошибки, стек
     ├── repository-structure.md              # этот файл
     ├── development.md                       # запуск, локальная разработка, миграции, тесты
+    ├── deploy.md                            # выкладка на VPS, HTTPS, бэкапы и восстановление
     ├── contributing.md                      # как называть ветки, коммиты и PR и как их вливать
     ├── plan.md                              # этапы и ветки текущего этапа
     ├── decisions/                           # ADR, архитектурные решения

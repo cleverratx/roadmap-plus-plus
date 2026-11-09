@@ -44,6 +44,7 @@ docker compose up -d --build
 - [docs/architecture.md](docs/architecture.md): модули и их границы, контракт API, формат ошибок, стек.
 - [docs/repository-structure.md](docs/repository-structure.md): что где лежит в репозитории.
 - [docs/development.md](docs/development.md): запуск, локальная разработка, миграции, тесты.
+- [docs/deploy.md](docs/deploy.md): выкладка на VPS, HTTPS, бэкапы и восстановление базы.
 - [docs/contributing.md](docs/contributing.md): как называть ветки, коммиты и PR и как их вливать.
 - [docs/plan.md](docs/plan.md): этапы и ветки текущего этапа.
 - [docs/decisions/](docs/decisions/): архитектурные решения (ADR) с обоснованиями.

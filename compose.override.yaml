@@ -6,3 +6,7 @@ services:
   api:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+
+  nginx:
+    ports:
+      - "${HTTP_PORT:-8080}:80"

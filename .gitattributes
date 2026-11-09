@@ -1,2 +1,5 @@
 * text=auto
 *.cs text eol=crlf
+*.sh text eol=lf
+Caddyfile text eol=lf
+deploy/systemd/* text eol=lf
