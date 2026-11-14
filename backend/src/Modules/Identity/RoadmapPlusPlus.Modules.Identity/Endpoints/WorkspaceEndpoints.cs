@@ -43,6 +43,38 @@ namespace RoadmapPlusPlus.Modules.Identity.Endpoints
                 .ProducesProblem( StatusCodes.Status404NotFound )
                 .ProducesProblem( StatusCodes.Status409Conflict );
 
+            workspaces.MapPut( "/{workspaceId:guid}/roles-enabled", async ( Guid workspaceId, SetRolesEnabledRequest request, WorkspaceService service, CancellationToken cancellationToken ) =>
+                    ( await service.SetRolesEnabledAsync( workspaceId, request, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
+                .ProducesProblem( StatusCodes.Status404NotFound )
+                .ProducesProblem( StatusCodes.Status409Conflict );
+
+            workspaces.MapPost( "/{workspaceId:guid}/roles", async ( Guid workspaceId, SaveRoleRequest request, WorkspaceService service, CancellationToken cancellationToken ) =>
+                    ( await service.AddRoleAsync( workspaceId, request, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status400BadRequest )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
+                .ProducesProblem( StatusCodes.Status404NotFound )
+                .ProducesProblem( StatusCodes.Status409Conflict );
+
+            workspaces.MapPatch( "/{workspaceId:guid}/roles/{roleId:guid}", async ( Guid workspaceId, Guid roleId, SaveRoleRequest request, WorkspaceService service, CancellationToken cancellationToken ) =>
+                    ( await service.UpdateRoleAsync( workspaceId, roleId, request, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status400BadRequest )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
+                .ProducesProblem( StatusCodes.Status404NotFound )
+                .ProducesProblem( StatusCodes.Status409Conflict );
+
+            workspaces.MapDelete( "/{workspaceId:guid}/roles/{roleId:guid}", async ( Guid workspaceId, Guid roleId, WorkspaceService service, CancellationToken cancellationToken ) =>
+                    ( await service.RemoveRoleAsync( workspaceId, roleId, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
+                .ProducesProblem( StatusCodes.Status404NotFound )
+                .ProducesProblem( StatusCodes.Status409Conflict );
+
+            workspaces.MapPut( "/{workspaceId:guid}/members/{userId:guid}/roles", async ( Guid workspaceId, Guid userId, SetMemberRolesRequest request, WorkspaceService service, CancellationToken cancellationToken ) =>
+                    ( await service.SetMemberRolesAsync( workspaceId, userId, request, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
+                .ProducesProblem( StatusCodes.Status404NotFound )
+                .ProducesProblem( StatusCodes.Status409Conflict );
+
             workspaces.MapGet( "/{workspaceId:guid}/invitation", async ( Guid workspaceId, WorkspaceService service, CancellationToken cancellationToken ) =>
                     ( await service.GetInvitationAsync( workspaceId, cancellationToken ) ).ToHttpResult() )
                 .ProducesProblem( StatusCodes.Status403Forbidden )

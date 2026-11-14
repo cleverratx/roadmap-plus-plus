@@ -302,6 +302,65 @@ namespace RoadmapPlusPlus.Modules.Identity.Infrastructure.Persistence.Migrations
                     b.ToTable("members", "identity");
                 });
 
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.MemberRole", b =>
+                {
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workspace_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("WorkspaceId", "UserId", "RoleId")
+                        .HasName("pk_member_roles");
+
+                    b.HasIndex("WorkspaceId", "RoleId")
+                        .HasDatabaseName("ix_member_roles_workspace_id_role_id");
+
+                    b.ToTable("member_roles", "identity");
+                });
+
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("color");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("workspace_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_roles");
+
+                    b.HasAlternateKey("WorkspaceId", "Id")
+                        .HasName("ak_roles_workspace_id_id");
+
+                    b.ToTable("roles", "identity");
+                });
+
             modelBuilder.Entity("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Workspace", b =>
                 {
                     b.Property<Guid>("Id")
@@ -324,6 +383,10 @@ namespace RoadmapPlusPlus.Modules.Identity.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
+
+                    b.Property<bool>("RolesEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("roles_enabled");
 
                     b.Property<int>("Version")
                         .IsConcurrencyToken()
@@ -393,9 +456,44 @@ namespace RoadmapPlusPlus.Modules.Identity.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_members_workspaces_workspace_id");
                 });
 
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.MemberRole", b =>
+                {
+                    b.HasOne("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Role", null)
+                        .WithMany()
+                        .HasForeignKey("WorkspaceId", "RoleId")
+                        .HasPrincipalKey("WorkspaceId", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_member_roles_roles_workspace_id_role_id");
+
+                    b.HasOne("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Member", null)
+                        .WithMany("Roles")
+                        .HasForeignKey("WorkspaceId", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_member_roles_members_workspace_id_user_id");
+                });
+
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Role", b =>
+                {
+                    b.HasOne("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Workspace", null)
+                        .WithMany("Roles")
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_roles_workspaces_workspace_id");
+                });
+
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Member", b =>
+                {
+                    b.Navigation("Roles");
+                });
+
             modelBuilder.Entity("RoadmapPlusPlus.Modules.Identity.Domain.Workspaces.Workspace", b =>
                 {
                     b.Navigation("Members");
+
+                    b.Navigation("Roles");
                 });
 #pragma warning restore 612, 618
         }

@@ -163,8 +163,9 @@ namespace RoadmapPlusPlus.IntegrationTests
             IReadOnlyList<WorkspaceMembership> memberTeams = await memberships.ListAsync( member.Id, Cancellation );
             WorkspaceMembership? stranger = await memberships.FindAsync( Guid.NewGuid(), team.Id, Cancellation );
 
-            Assert.Equal( new WorkspaceMembership( team.Id, true ), headMembership );
-            Assert.Equal( [ new WorkspaceMembership( team.Id, false ) ], memberTeams );
+            Assert.Equal( (team.Id, true, false), (headMembership!.WorkspaceId, headMembership.IsHead, headMembership.RolesEnabled) );
+            Assert.Empty( headMembership.RoleIds );
+            Assert.Equal( [ (team.Id, false) ], memberTeams.Select( m => (m.WorkspaceId, m.IsHead) ) );
             Assert.Null( stranger );
         }
 

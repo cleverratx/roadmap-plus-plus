@@ -20,6 +20,10 @@ namespace RoadmapPlusPlus.Modules.Identity.Infrastructure.Persistence
 
         public DbSet<Member> Members => Set<Member>();
 
+        public DbSet<Role> Roles => Set<Role>();
+
+        public DbSet<MemberRole> MemberRoles => Set<MemberRole>();
+
         public DbSet<Invitation> Invitations => Set<Invitation>();
 
         public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();

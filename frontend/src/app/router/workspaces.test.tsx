@@ -12,10 +12,10 @@ const anastasia = { id: '22222222-0000-7000-8000-000000000002', email: 'nastya@e
 const teamId = '33333333-0000-7000-8000-000000000003'
 
 function member(user: typeof me, isHead: boolean) {
-  return { userId: user.id, displayName: user.displayName, email: user.email, color: '#3b5bdb', isHead, joinedAt: '2026-10-20T12:00:00Z' }
+  return { userId: user.id, displayName: user.displayName, email: user.email, color: '#3b5bdb', isHead, joinedAt: '2026-10-20T12:00:00Z', roleIds: [] as string[] }
 }
 
-const team = { id: teamId, name: 'СКБ', color: '#3b5bdb', isHead: true, members: [member(me, true), member(anastasia, false)] }
+const team = { id: teamId, name: 'СКБ', color: '#3b5bdb', isHead: true, rolesEnabled: false, roles: [], members: [member(me, true), member(anastasia, false)] }
 
 function renderApp(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
@@ -130,5 +130,23 @@ describe('teams', () => {
     expect(screen.getByRole('textbox', { name: 'Ссылка-приглашение' })).toHaveValue(`${window.location.origin}/invite/tok`)
     const patch = fetchMock.mock.calls.map(([request]) => request as Request).find((r) => r.method === 'PATCH')!
     expect(await patch.json()).toEqual({ isHead: true })
+  })
+
+  it('shows roles on the team page and next to their holders', async () => {
+    const jury = { id: 'jury', name: 'Жюри', color: '#7048e8', memberCount: 1 }
+    mockApi({
+      ...common,
+      [`GET /api/workspaces/${teamId}`]: () =>
+        json({ ...team, roles: [jury], members: [member(me, true), { ...member(anastasia, false), roleIds: ['jury'] }] }),
+      [`GET /api/workspaces/${teamId}/invitation`]: () => json({ active: null }),
+    })
+    renderApp(`/settings/teams/${teamId}`)
+
+    const row = (await screen.findByText('Анастасия')).closest('li')!
+    expect(within(row).getByLabelText('Роли')).toHaveTextContent('Жюри')
+    expect(within(row).getByRole('button', { name: 'Роли участника Анастасия' })).toBeInTheDocument()
+    const roles = screen.getByRole('region', { name: 'Роли' })
+    expect(within(roles).getByRole('checkbox', { name: 'Включить роли' })).not.toBeChecked()
+    expect(within(roles).getByText('1 участник')).toBeInTheDocument()
   })
 })

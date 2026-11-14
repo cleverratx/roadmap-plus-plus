@@ -29,6 +29,20 @@ namespace RoadmapPlusPlus.Modules.Identity.Domain.Workspaces
             "identity.concurrent_change",
             "Команду только что изменил кто-то ещё. Обновите страницу и попробуйте снова." );
 
+        public static readonly Error RoleNotFound = Error.NotFound(
+            "identity.role_not_found",
+            "Такой роли в команде нет." );
+
+        public static readonly Error RoleNameTaken = Error.Validation(
+            "identity.role_name_taken",
+            "Роль с таким названием в команде уже есть.",
+            new Dictionary<string, string[]> { [ "name" ] = [ "Роль с таким названием в команде уже есть." ] } );
+
+        public static Error TooManyRoles( int max )
+        {
+            return Error.Validation( "identity.too_many_roles", $"В одной команде может быть не больше {max} ролей." );
+        }
+
         public static Error InvalidRequest( IReadOnlyDictionary<string, string[]> fields )
         {
             return Error.Validation( "identity.invalid_request", "Проверьте поля формы.", fields );

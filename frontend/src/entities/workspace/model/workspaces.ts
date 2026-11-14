@@ -7,6 +7,8 @@ export type WorkspaceDetails = components['schemas']['WorkspaceDetails']
 
 export type WorkspaceMember = components['schemas']['MemberResponse']
 
+export type WorkspaceRole = components['schemas']['RoleResponse']
+
 export const workspacesQueryKey = ['workspaces'] as const
 
 export function workspaceQueryKey(workspaceId: string) {

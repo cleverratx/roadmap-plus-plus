@@ -1,6 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { WorkspaceDot, workspaceQueryKey, workspacesQueryKey, type WorkspaceDetails, type WorkspaceMember } from '@/entities/workspace'
+import {
+  RoleBadge,
+  WorkspaceDot,
+  workspaceQueryKey,
+  workspacesQueryKey,
+  type WorkspaceDetails,
+  type WorkspaceMember,
+} from '@/entities/workspace'
 import { api, toFormErrors, unwrap } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { Button } from '@/shared/ui'
@@ -9,9 +17,10 @@ import styles from './MemberList.module.css'
 type MemberListProps = {
   workspace: WorkspaceDetails
   meId: string
+  memberActions?: (member: WorkspaceMember) => ReactNode
 }
 
-export function MemberList({ workspace, meId }: MemberListProps) {
+export function MemberList({ workspace, meId, memberActions }: MemberListProps) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const path = (userId: string) => ({ params: { path: { workspaceId: workspace.id, userId } } })
@@ -50,6 +59,7 @@ export function MemberList({ workspace, meId }: MemberListProps) {
       <ul className={styles.list}>
         {workspace.members.map((member) => {
           const isMe = member.userId === meId
+          const roles = workspace.roles.filter((role) => member.roleIds.includes(role.id))
 
           return (
             <li key={member.userId} className={styles.member}>
@@ -60,9 +70,17 @@ export function MemberList({ workspace, meId }: MemberListProps) {
                   {isMe && <span className={styles.muted}> (вы)</span>}
                 </span>
                 <span className={styles.muted}>{member.email}</span>
+                {roles.length > 0 && (
+                  <span className={styles.roles} aria-label="Роли">
+                    {roles.map((role) => (
+                      <RoleBadge key={role.id} role={role} />
+                    ))}
+                  </span>
+                )}
               </div>
               {member.isHead && <span className={styles.badge}>глава</span>}
               <div className={styles.actions}>
+                {memberActions?.(member)}
                 {workspace.isHead && (
                   <Button variant="ghost" onClick={() => setHead.mutate(member)} disabled={busy}>
                     {member.isHead ? 'Снять главу' : 'Сделать главой'}
