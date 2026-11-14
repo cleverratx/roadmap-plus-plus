@@ -4,6 +4,7 @@ import { useWorkspace, WorkspaceDot } from '@/entities/workspace'
 import { InviteLink } from '@/features/workspace-invite'
 import { MemberList } from '@/features/workspace-members'
 import { WorkspaceEditForm } from '@/features/workspace-edit'
+import { MemberRolesDialog, RolesSection } from '@/features/workspace-roles'
 import { HttpError, toFormErrors } from '@/shared/api'
 import { paths } from '@/shared/config'
 import { Page } from '@/shared/ui'
@@ -43,7 +44,12 @@ export function TeamPage() {
           <InviteLink workspaceId={team.id} />
         </>
       )}
-      <MemberList workspace={team} meId={me.data.id} />
+      <MemberList
+        workspace={team}
+        meId={me.data.id}
+        memberActions={team.isHead ? (member) => <MemberRolesDialog workspace={team} member={member} /> : undefined}
+      />
+      <RolesSection workspace={team} />
     </Page>
   )
 }

@@ -17,6 +17,9 @@ namespace RoadmapPlusPlus.Modules.Identity.Infrastructure.Persistence.Configurat
 
             builder.HasMany( w => w.Members ).WithOne().HasForeignKey( m => m.WorkspaceId ).OnDelete( DeleteBehavior.Cascade );
             builder.Navigation( w => w.Members ).UsePropertyAccessMode( PropertyAccessMode.Field );
+
+            builder.HasMany( w => w.Roles ).WithOne().HasForeignKey( r => r.WorkspaceId ).OnDelete( DeleteBehavior.Cascade );
+            builder.Navigation( w => w.Roles ).UsePropertyAccessMode( PropertyAccessMode.Field );
         }
     }
 }

@@ -66,3 +66,10 @@
   margin: 0;
   color: var(--color-danger);
 }
+
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}

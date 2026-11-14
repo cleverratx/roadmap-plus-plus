@@ -91,6 +91,45 @@ namespace RoadmapPlusPlus.Modules.Identity.Application.Workspaces
             return result.IsSuccess ? Result.Success() : result.Error;
         }
 
+        public Task<Result<WorkspaceDetails>> SetRolesEnabledAsync( Guid workspaceId, SetRolesEnabledRequest request, CancellationToken cancellationToken )
+        {
+            return ChangeAsync( workspaceId, w => w.SetRolesEnabled( currentUser.Id, request.Enabled ), cancellationToken );
+        }
+
+        public Task<Result<WorkspaceDetails>> AddRoleAsync( Guid workspaceId, SaveRoleRequest request, CancellationToken cancellationToken )
+        {
+            return ChangeAsync(
+                workspaceId,
+                w =>
+                {
+                    Result<(string Name, string Color)> role = ValidateRole( request, WorkspacePalette.ForRole( w.Roles.Count ) );
+                    return role.IsSuccess ? w.AddRole( currentUser.Id, role.Value.Name, role.Value.Color, time.GetUtcNow() ) : role;
+                },
+                cancellationToken );
+        }
+
+        public Task<Result<WorkspaceDetails>> UpdateRoleAsync( Guid workspaceId, Guid roleId, SaveRoleRequest request, CancellationToken cancellationToken )
+        {
+            return ChangeAsync(
+                workspaceId,
+                w =>
+                {
+                    Result<(string Name, string Color)> role = ValidateRole( request, w.FindRole( roleId )?.Color ?? WorkspacePalette.ForRole( 0 ) );
+                    return role.IsSuccess ? w.UpdateRole( currentUser.Id, roleId, role.Value.Name, role.Value.Color ) : role;
+                },
+                cancellationToken );
+        }
+
+        public Task<Result<WorkspaceDetails>> RemoveRoleAsync( Guid workspaceId, Guid roleId, CancellationToken cancellationToken )
+        {
+            return ChangeAsync( workspaceId, w => w.RemoveRole( currentUser.Id, roleId ), cancellationToken );
+        }
+
+        public Task<Result<WorkspaceDetails>> SetMemberRolesAsync( Guid workspaceId, Guid userId, SetMemberRolesRequest request, CancellationToken cancellationToken )
+        {
+            return ChangeAsync( workspaceId, w => w.SetMemberRoles( currentUser.Id, userId, request.RoleIds ?? [] ), cancellationToken );
+        }
+
         public async Task<Result<InvitationState>> GetInvitationAsync( Guid workspaceId, CancellationToken cancellationToken )
         {
             Result<Workspace> workspace = await LoadAsHeadAsync( workspaceId, cancellationToken );
@@ -212,7 +251,10 @@ namespace RoadmapPlusPlus.Modules.Identity.Application.Workspaces
 
         private async Task<Workspace?> LoadMineAsync( Guid workspaceId, CancellationToken cancellationToken )
         {
-            Workspace? workspace = await db.Workspaces.Include( w => w.Members )
+            Workspace? workspace = await db.Workspaces
+                .Include( w => w.Members ).ThenInclude( m => m.Roles )
+                .Include( w => w.Roles )
+                .AsSplitQuery()
                 .FirstOrDefaultAsync( w => w.Id == workspaceId, cancellationToken );
 
             return workspace?.FindMember( currentUser.Id ) is null ? null : workspace;
@@ -273,15 +315,49 @@ namespace RoadmapPlusPlus.Modules.Identity.Application.Workspaces
                     users.GetValueOrDefault( m.UserId ).Email ?? string.Empty,
                     m.Color,
                     m.IsHead,
-                    m.JoinedAt ) )
+                    m.JoinedAt,
+                    m.Roles.Select( r => r.RoleId ).ToList() ) )
                 .ToList();
 
-            return new WorkspaceDetails( workspace.Id, workspace.Name, workspace.Color, workspace.IsHead( currentUser.Id ), members );
+            List<RoleResponse> roles = workspace.Roles
+                .OrderBy( r => r.CreatedAt )
+                .Select( r => new RoleResponse( r.Id, r.Name, r.Color, workspace.Members.Count( m => m.Roles.Any( mr => mr.RoleId == r.Id ) ) ) )
+                .ToList();
+
+            return new WorkspaceDetails(
+                workspace.Id,
+                workspace.Name,
+                workspace.Color,
+                workspace.IsHead( currentUser.Id ),
+                workspace.RolesEnabled,
+                roles,
+                members );
         }
 
         private static InvitationResponse ToResponse( Invitation invitation )
         {
             return new InvitationResponse( invitation.Token, invitation.ExpiresAt );
+        }
+
+        private static Result<(string Name, string Color)> ValidateRole( SaveRoleRequest request, string fallbackColor )
+        {
+            string name = request.Name?.Trim() ?? string.Empty;
+            Dictionary<string, string[]> fields = [];
+            if ( name.Length == 0 )
+            {
+                fields[ "name" ] = [ "Назовите роль." ];
+            }
+            else if ( name.Length > Role.NameMaxLength )
+            {
+                fields[ "name" ] = [ $"Название роли должно быть не длиннее {Role.NameMaxLength} символов." ];
+            }
+
+            if ( request.Color is not null && !WorkspacePalette.IsValid( request.Color ) )
+            {
+                fields[ "color" ] = [ "Цвет должен быть в формате #RRGGBB." ];
+            }
+
+            return fields.Count > 0 ? WorkspaceErrors.InvalidRequest( fields ) : (name, request.Color ?? fallbackColor);
         }
 
         private static Dictionary<string, string[]> ValidateName( string name )

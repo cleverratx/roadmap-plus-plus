@@ -1,4 +1,5 @@
 export { Button, type ButtonVariant } from './button/Button'
+export { Checkbox } from './checkbox/Checkbox'
 export { ChoiceGroup, type Choice } from './choice-group/ChoiceGroup'
 export { ColorSwatches } from './color-swatches/ColorSwatches'
 export { ContextMenu, type ContextMenuItem } from './context-menu/ContextMenu'

@@ -30,6 +30,11 @@ namespace RoadmapPlusPlus.Modules.Identity.Domain.Workspaces
             return Colors[ index % Colors.Count ];
         }
 
+        public static string ForRole( int index )
+        {
+            return Colors[ index % Colors.Count ];
+        }
+
         public static bool IsValid( string? color )
         {
             return color is not null && HexColor().IsMatch( color );
