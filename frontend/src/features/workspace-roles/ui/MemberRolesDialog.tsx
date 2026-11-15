@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { RoleBadge, type WorkspaceDetails, type WorkspaceMember } from '@/entities/workspace'
+import { RolePicker, type WorkspaceDetails, type WorkspaceMember } from '@/entities/workspace'
 import { api, toFormErrors, unwrap } from '@/shared/api'
-import { Button, Checkbox, Dialog } from '@/shared/ui'
+import { Button, Dialog } from '@/shared/ui'
 import { useWorkspaceChange } from '../model/roles'
 import styles from './Roles.module.css'
 
@@ -32,18 +32,6 @@ export function MemberRolesDialog({ workspace, member }: MemberRolesDialogProps)
     }
   }
 
-  function toggle(roleId: string, checked: boolean) {
-    setSelected((current) => {
-      const next = new Set(current)
-      if (checked) {
-        next.add(roleId)
-      } else {
-        next.delete(roleId)
-      }
-      return next
-    })
-  }
-
   return (
     <Dialog
       title={`Роли: ${member.displayName}`}
@@ -67,17 +55,7 @@ export function MemberRolesDialog({ workspace, member }: MemberRolesDialogProps)
       {workspace.roles.length === 0 ? (
         <p className={styles.muted}>В команде пока нет ролей. Добавьте их в разделе "Роли" ниже.</p>
       ) : (
-        <div className={styles.checks} role="group" aria-label="Роли участника">
-          {workspace.roles.map((role) => (
-            <Checkbox
-              key={role.id}
-              label={<RoleBadge role={role} />}
-              aria-label={role.name}
-              checked={selected.has(role.id)}
-              onChange={(event) => toggle(role.id, event.target.checked)}
-            />
-          ))}
-        </div>
+        <RolePicker label="Роли участника" roles={workspace.roles} selected={selected} onChange={setSelected} />
       )}
       {save.isError && (
         <p className={styles.error} role="alert">

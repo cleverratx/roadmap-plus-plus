@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { childKindsOf, itemKindLabels, newItemTitles, rememberItem, type Item, type ItemDetails, type ItemKind } from '@/entities/item'
-import { WorkspaceDot, type WorkspaceSummary } from '@/entities/workspace'
+import { canCreateRoot, RolePicker, useWorkspace, WorkspaceDot, type WorkspaceSummary } from '@/entities/workspace'
 import { api, toFormErrors, unwrap } from '@/shared/api'
 import { Button, ChoiceGroup, Dialog } from '@/shared/ui'
 import { checkItemFields, toItemBody, type ItemFieldsValue } from '../model/fields'
@@ -29,7 +29,14 @@ export function CreateItemDialog({ draft, workspaces, onClose, onCreated }: Crea
   const { parent } = draft
   const kinds = childKindsOf(parent?.kind ?? null)
   const [kind, setKind] = useState(draft.kind)
-  const [workspaceId, setWorkspaceId] = useState(draft.workspaceId ?? workspaces[0]?.id ?? '')
+  const rootTeams = workspaces.filter(canCreateRoot)
+  const [workspaceId, setWorkspaceId] = useState(
+    rootTeams.find((workspace) => workspace.id === draft.workspaceId)?.id ?? rootTeams[0]?.id ?? '',
+  )
+  const team = rootTeams.find((workspace) => workspace.id === workspaceId)
+  const picksRoles = !parent && team?.isHead === true && team.rolesEnabled
+  const teamDetails = useWorkspace(workspaceId, picksRoles)
+  const [roleIds, setRoleIds] = useState<ReadonlySet<string>>(new Set())
   const [value, setValue] = useState<ItemFieldsValue>({
     title: '',
     startDate: draft.startDate ?? '',
@@ -42,7 +49,13 @@ export function CreateItemDialog({ draft, workspaces, onClose, onCreated }: Crea
     mutationFn: () =>
       unwrap(
         api.POST('/api/items', {
-          body: { workspaceId: parent ? null : workspaceId, parentId: parent?.id ?? null, kind, ...toItemBody(value) },
+          body: {
+            workspaceId: parent ? null : workspaceId,
+            parentId: parent?.id ?? null,
+            kind,
+            ...toItemBody(value),
+            ...(picksRoles ? { roleIds: [...roleIds] } : {}),
+          },
         }),
       ),
     onSuccess: (details) => {
@@ -77,10 +90,10 @@ export function CreateItemDialog({ draft, workspaces, onClose, onCreated }: Crea
             onChange={setKind}
           />
         )}
-        {!parent && workspaces.length > 1 && (
+        {!parent && rootTeams.length > 1 && (
           <ChoiceGroup
             label="Команда"
-            choices={workspaces.map((workspace) => ({
+            choices={rootTeams.map((workspace) => ({
               value: workspace.id,
               label: (
                 <>
@@ -94,6 +107,19 @@ export function CreateItemDialog({ draft, workspaces, onClose, onCreated }: Crea
           />
         )}
         <ItemFields value={value} onChange={setValue} errors={{ ...errors.fields, ...checks }} />
+        {picksRoles && teamDetails.data && (
+          <fieldset className={styles.roles}>
+            <legend className={styles.legend}>Кому открыть</legend>
+            {teamDetails.data.roles.length === 0 ? (
+              <p className={styles.hint}>В команде пока нет ролей, поэтому событие увидят только главы.</p>
+            ) : (
+              <>
+                <RolePicker label="Кому открыть" roles={teamDetails.data.roles} selected={roleIds} onChange={setRoleIds} />
+                {roleIds.size === 0 && <p className={styles.hint}>Если не выбрать ни одной роли, событие увидят только главы.</p>}
+              </>
+            )}
+          </fieldset>
+        )}
         {errors.message && (
           <p className={styles.error} role="alert">
             {errors.message}

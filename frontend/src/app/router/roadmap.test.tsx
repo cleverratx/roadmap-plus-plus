@@ -8,12 +8,12 @@ import { createQueryClient } from '../providers/query-client'
 import { routes } from './routes'
 
 const me = { id: '11111111-0000-7000-8000-000000000001', email: 'yaroslav@example.com', displayName: 'Ярослав' }
-const team = { id: 'skb', name: 'СКБ', color: '#3b5bdb', isHead: true, memberCount: 1 }
+const team = { id: 'skb', name: 'СКБ', color: '#3b5bdb', isHead: true, memberCount: 1, rolesEnabled: false }
 const today = new Date()
 const iso = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-const hackathon = { id: 'event', workspaceId: 'skb', parentId: null, kind: 'event', title: 'Хакатон', startDate: iso(today), endDate: iso(today), position: 0 }
-const day = { id: 'day', workspaceId: 'skb', parentId: 'event', kind: 'group', title: 'День 1', startDate: iso(today), endDate: iso(today), position: 0 }
+const hackathon = { id: 'event', workspaceId: 'skb', parentId: null, kind: 'event', title: 'Хакатон', startDate: iso(today), endDate: iso(today), position: 0, isFrame: false }
+const day = { id: 'day', workspaceId: 'skb', parentId: 'event', kind: 'group', title: 'День 1', startDate: iso(today), endDate: iso(today), position: 0, isFrame: false }
 
 const common = {
   'GET /api/me': () => json(me),
@@ -36,8 +36,8 @@ describe('roadmap', () => {
     mockApi({
       ...common,
       'GET /api/items': () => json([hackathon]),
-      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [day], links: [] }),
-      'GET /api/items/day': () => json({ item: day, descriptionMd: '', path: [hackathon], children: [], links: [] }),
+      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [day], links: [], roleIds: [], inheritedRoleIds: [] }),
+      'GET /api/items/day': () => json({ item: day, descriptionMd: '', path: [hackathon], children: [], links: [], roleIds: [], inheritedRoleIds: [] }),
     })
     const router = renderApp('/')
 
@@ -59,8 +59,8 @@ describe('roadmap', () => {
     mockApi({
       ...common,
       'GET /api/items': () => json([]),
-      'POST /api/items': () => json({ item: created, descriptionMd: '', path: [], children: [], links: [] }, 201),
-      'GET /api/items/new': () => json({ item: created, descriptionMd: '', path: [], children: [], links: [] }),
+      'POST /api/items': () => json({ item: created, descriptionMd: '', path: [], children: [], links: [], roleIds: [], inheritedRoleIds: [] }, 201),
+      'GET /api/items/new': () => json({ item: created, descriptionMd: '', path: [], children: [], links: [], roleIds: [], inheritedRoleIds: [] }),
     })
     const router = renderApp('/')
 
@@ -77,7 +77,7 @@ describe('roadmap', () => {
     mockApi({
       ...common,
       'GET /api/items': () => json([hackathon]),
-      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [], links: [] }),
+      'GET /api/items/event': () => json({ item: hackathon, descriptionMd: '', path: [], children: [], links: [], roleIds: [], inheritedRoleIds: [] }),
       'DELETE /api/items/event': () => new Response(null, { status: 204 }),
     })
     const router = renderApp('/?item=event')

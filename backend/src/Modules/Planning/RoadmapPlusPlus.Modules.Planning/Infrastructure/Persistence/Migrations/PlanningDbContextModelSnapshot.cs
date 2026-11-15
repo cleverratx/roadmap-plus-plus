@@ -23,6 +23,25 @@ namespace RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Planning.Domain.Access.ItemRole", b =>
+                {
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_id");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("ItemId", "RoleId")
+                        .HasName("pk_item_roles");
+
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("ix_item_roles_role_id");
+
+                    b.ToTable("item_roles", "planning");
+                });
+
             modelBuilder.Entity("RoadmapPlusPlus.Modules.Planning.Domain.Items.Item", b =>
                 {
                     b.Property<Guid>("Id")
@@ -137,6 +156,16 @@ namespace RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_links_item_id_position");
 
                     b.ToTable("links", "planning");
+                });
+
+            modelBuilder.Entity("RoadmapPlusPlus.Modules.Planning.Domain.Access.ItemRole", b =>
+                {
+                    b.HasOne("RoadmapPlusPlus.Modules.Planning.Domain.Items.Item", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_item_roles_items_item_id");
                 });
 
             modelBuilder.Entity("RoadmapPlusPlus.Modules.Planning.Domain.Items.Item", b =>

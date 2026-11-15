@@ -6,17 +6,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { json, mockApi } from '@/shared/lib/test/mock-api'
 import { Timeline } from './Timeline'
 
-type Handlers = Pick<ComponentProps<typeof Timeline>, 'onOpenItem' | 'onAddChild' | 'onDeleteItem' | 'onCreateAt'>
+type Handlers = Pick<ComponentProps<typeof Timeline>, 'onOpenItem' | 'onAddChild' | 'onDeleteItem' | 'onCreateAt' | 'canCreateRoots'>
 
 const now = new Date(2026, 10, 4, 15, 30)
 const study = { id: 'study', color: '#2b8a3e' }
 const hackathons = { id: 'hackathons', color: '#3b5bdb' }
 
 const items = [
-  { id: 'macro', workspaceId: 'hackathons', parentId: null, kind: 'macro', title: 'Проектная деятельность', startDate: '2026-09-01', endDate: '2026-12-31', position: 0 },
-  { id: 'event', workspaceId: 'hackathons', parentId: 'macro', kind: 'event', title: 'Хакатон', startDate: '2026-11-03', endDate: '2026-11-05', position: 0 },
-  { id: 'day', workspaceId: 'hackathons', parentId: 'event', kind: 'group', title: 'День 1', startDate: '2026-11-03', endDate: '2026-11-03', position: 0 },
-  { id: 'lecture', workspaceId: 'study', parentId: null, kind: 'event', title: 'Лекция', startDate: '2026-11-10', endDate: '2026-11-10', position: 0 },
+  { id: 'macro', workspaceId: 'hackathons', parentId: null, kind: 'macro', title: 'Проектная деятельность', startDate: '2026-09-01', endDate: '2026-12-31', position: 0, isFrame: false },
+  { id: 'event', workspaceId: 'hackathons', parentId: 'macro', kind: 'event', title: 'Хакатон', startDate: '2026-11-03', endDate: '2026-11-05', position: 0, isFrame: false },
+  { id: 'day', workspaceId: 'hackathons', parentId: 'event', kind: 'group', title: 'День 1', startDate: '2026-11-03', endDate: '2026-11-03', position: 0, isFrame: false },
+  { id: 'lecture', workspaceId: 'study', parentId: null, kind: 'event', title: 'Лекция', startDate: '2026-11-10', endDate: '2026-11-10', position: 0, isFrame: false },
 ]
 
 function renderTimeline(hidden: ReadonlySet<string> = new Set(), handlers: Handlers = {}) {
@@ -114,5 +114,31 @@ describe('Timeline', () => {
     await userEvent.click(screen.getByRole('menuitem', { name: 'Новое событие здесь' }))
 
     expect(onCreateAt).toHaveBeenCalledWith('event', '2026-11-04')
+  })
+
+  it('draws frames and offers only to open them', async () => {
+    const onOpenItem = vi.fn()
+    mockApi({ 'GET /api/items': () => json([{ ...items[0], isFrame: true }, items[1]]) })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <Timeline workspaces={[study, hackathons]} now={now} onOpenItem={onOpenItem} />
+      </QueryClientProvider>,
+    )
+
+    const frame = await screen.findByRole('button', { name: /Проектная деятельность.*рамка/ })
+    expect(frame).toHaveAttribute('data-frame', 'true')
+    fireEvent.contextMenu(frame)
+
+    expect(within(screen.getByRole('menu')).getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Открыть'])
+  })
+
+  it('offers nothing on empty space when new top level items are not allowed', async () => {
+    const { svg } = renderTimeline(new Set(), { canCreateRoots: false })
+    await within(svg).findByText('Проектная деятельность')
+
+    fireEvent.contextMenu(svg, { clientX: 490 })
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 })

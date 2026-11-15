@@ -6,15 +6,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { json, mockApi, problem } from '@/shared/lib/test/mock-api'
 import { EventPanel } from './EventPanel'
 
-const team = { id: 'team', name: 'СКБ', color: '#3b5bdb', isHead: true, memberCount: 2 }
-const macro = { id: 'macro', workspaceId: 'team', parentId: null, kind: 'macro', title: 'Проектная деятельность', startDate: '2026-09-01', endDate: '2026-12-31', position: 0 }
-const hackathon = { id: 'event', workspaceId: 'team', parentId: 'macro', kind: 'event', title: 'Хакатон', startDate: '2026-12-30', endDate: '2027-01-02', position: 0 }
-const day = { id: 'day', workspaceId: 'team', parentId: 'event', kind: 'group', title: 'День 1', startDate: '2026-12-30', endDate: '2026-12-30', position: 0 }
-const repo = { id: 'repo', workspaceId: 'team', parentId: 'event', kind: 'group', title: 'Организация и репозиторий', startDate: null, endDate: null, position: 1 }
+const team = { id: 'team', name: 'СКБ', color: '#3b5bdb', isHead: true, memberCount: 2, rolesEnabled: false }
+const macro = { id: 'macro', workspaceId: 'team', parentId: null, kind: 'macro', title: 'Проектная деятельность', startDate: '2026-09-01', endDate: '2026-12-31', position: 0, isFrame: false }
+const hackathon = { id: 'event', workspaceId: 'team', parentId: 'macro', kind: 'event', title: 'Хакатон', startDate: '2026-12-30', endDate: '2027-01-02', position: 0, isFrame: false }
+const day = { id: 'day', workspaceId: 'team', parentId: 'event', kind: 'group', title: 'День 1', startDate: '2026-12-30', endDate: '2026-12-30', position: 0, isFrame: false }
+const repo = { id: 'repo', workspaceId: 'team', parentId: 'event', kind: 'group', title: 'Организация и репозиторий', startDate: null, endDate: null, position: 1, isFrame: false }
 
 const sheet = { id: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1AbC', title: '', kind: 'googleSheet', position: 0 }
 
-const details = { item: hackathon, descriptionMd: 'Командный хакатон СКБ', path: [macro], children: [day, repo], links: [sheet] }
+const details = { item: hackathon, descriptionMd: 'Командный хакатон СКБ', path: [macro], children: [day, repo], links: [sheet], roleIds: [], inheritedRoleIds: [] }
 
 function renderPanel(handlers: Partial<ComponentProps<typeof EventPanel>> = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -80,7 +80,7 @@ describe('EventPanel', () => {
       'GET /api/items/event': () => json(current),
       'POST /api/items/day/move': () => {
         current = { ...details, children: [repo, day] }
-        return json({ item: day, descriptionMd: '', path: [macro, hackathon], children: [], links: [] })
+        return json({ item: day, descriptionMd: '', path: [macro, hackathon], children: [], links: [], roleIds: [], inheritedRoleIds: [] })
       },
     })
     renderPanel()
@@ -130,5 +130,23 @@ describe('EventPanel', () => {
     renderPanel()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Узел не найден.')
+  })
+
+  it('shows a frame without content and actions', async () => {
+    const frameMacro = { ...macro, isFrame: true }
+    mockApi({
+      'GET /api/items/event': () =>
+        json({ item: { ...hackathon, isFrame: true }, descriptionMd: '', path: [frameMacro], children: [day], links: [], roleIds: [], inheritedRoleIds: [] }),
+    })
+    const onOpen = vi.fn()
+    renderPanel({ onOpen })
+
+    expect(await screen.findByText(/показан рамкой/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Изменить' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Удалить' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Ссылки' })).not.toBeInTheDocument()
+
+    await userEvent.click(within(screen.getByRole('list', { name: 'Открытое внутри' })).getByRole('button', { name: /День 1/ }))
+    expect(onOpen).toHaveBeenCalledWith('day')
   })
 })

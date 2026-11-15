@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using RoadmapPlusPlus.BuildingBlocks.Http;
+using RoadmapPlusPlus.Modules.Planning.Application.Access;
 using RoadmapPlusPlus.Modules.Planning.Application.Items;
 
 namespace RoadmapPlusPlus.Modules.Planning.Endpoints
@@ -16,6 +17,17 @@ namespace RoadmapPlusPlus.Modules.Planning.Endpoints
                     ( await service.ListAsync( from, to, workspaceId, cancellationToken ) ).ToHttpResult() )
                 .ProducesProblem( StatusCodes.Status400BadRequest );
 
+            items.MapGet( "/access-summary", async ( Guid workspaceId, ItemAccessService service, CancellationToken cancellationToken ) =>
+                    ( await service.SummaryAsync( workspaceId, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
+                .ProducesProblem( StatusCodes.Status404NotFound );
+
+            items.MapPut( "/{itemId:guid}/roles", async ( Guid itemId, SetItemRolesRequest request, ItemAccessService service, CancellationToken cancellationToken ) =>
+                    ( await service.SetRolesAsync( itemId, request, cancellationToken ) ).ToHttpResult() )
+                .ProducesProblem( StatusCodes.Status400BadRequest )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
+                .ProducesProblem( StatusCodes.Status404NotFound );
+
             items.MapGet( "/{itemId:guid}", async ( Guid itemId, ItemService service, CancellationToken cancellationToken ) =>
                     ( await service.GetAsync( itemId, cancellationToken ) ).ToHttpResult() )
                 .ProducesProblem( StatusCodes.Status404NotFound );
@@ -24,6 +36,7 @@ namespace RoadmapPlusPlus.Modules.Planning.Endpoints
                     ( await service.CreateAsync( request, cancellationToken ) )
                         .ToHttpResult( details => TypedResults.Created( $"/api/items/{details.Item.Id}", details ) ) )
                 .ProducesProblem( StatusCodes.Status400BadRequest )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
                 .ProducesProblem( StatusCodes.Status404NotFound );
 
             items.MapPut( "/{itemId:guid}", async ( Guid itemId, UpdateItemRequest request, ItemService service, CancellationToken cancellationToken ) =>
@@ -34,6 +47,7 @@ namespace RoadmapPlusPlus.Modules.Planning.Endpoints
             items.MapPost( "/{itemId:guid}/move", async ( Guid itemId, MoveItemRequest request, ItemService service, CancellationToken cancellationToken ) =>
                     ( await service.MoveAsync( itemId, request, cancellationToken ) ).ToHttpResult() )
                 .ProducesProblem( StatusCodes.Status400BadRequest )
+                .ProducesProblem( StatusCodes.Status403Forbidden )
                 .ProducesProblem( StatusCodes.Status404NotFound );
 
             items.MapGet( "/{itemId:guid}/move-targets", async ( Guid itemId, ItemService service, CancellationToken cancellationToken ) =>

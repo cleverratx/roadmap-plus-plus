@@ -28,7 +28,7 @@ namespace RoadmapPlusPlus.IntegrationTests
             Assert.Equal( "#7048e8", assigned.Roles[ 0 ].Color );
             Assert.Matches( "^#[0-9a-f]{6}$", assigned.Roles[ 1 ].Color );
             Assert.Equal( [ 1, 1 ], assigned.Roles.Select( r => r.MemberCount ) );
-            Assert.Equal( [ jury, mentors ], seenByMember.Members.Single( m => m.UserId == member.Id ).RoleIds.Order() );
+            Assert.Equal( new[] { jury, mentors }.Order(), seenByMember.Members.Single( m => m.UserId == member.Id ).RoleIds.Order() );
             Assert.Equal( 2, seenByMember.Roles.Length );
         }
 

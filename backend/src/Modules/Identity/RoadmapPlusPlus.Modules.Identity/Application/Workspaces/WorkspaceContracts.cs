@@ -13,7 +13,7 @@ namespace RoadmapPlusPlus.Modules.Identity.Application.Workspaces
 
     internal sealed record SetMemberRolesRequest( IReadOnlyList<Guid> RoleIds );
 
-    internal sealed record WorkspaceSummary( Guid Id, string Name, string Color, bool IsHead, int MemberCount );
+    internal sealed record WorkspaceSummary( Guid Id, string Name, string Color, bool IsHead, int MemberCount, bool RolesEnabled );
 
     /// <summary>
     /// Команда для её страницы. Роли и то, у кого какие роли, видят все участники, как в Discord,

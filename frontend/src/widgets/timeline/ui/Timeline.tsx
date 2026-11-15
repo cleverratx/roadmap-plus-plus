@@ -45,6 +45,7 @@ type TimelineProps = {
   onDeleteItem?: (item: Item) => void
   onMoveItem?: (item: Item) => void
   onCreateAt?: (kind: ItemKind, date: string) => void
+  canCreateRoots?: boolean
 }
 
 /** По чему кликнули правой кнопкой: по блоку или по пустому месту в какой-то день. */
@@ -60,6 +61,7 @@ export function Timeline({
   onDeleteItem,
   onMoveItem,
   onCreateAt,
+  canCreateRoots = true,
 }: TimelineProps) {
   const [now] = useState(() => nowProp ?? new Date())
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -135,6 +137,11 @@ export function Timeline({
       return
     }
 
+    if (!canCreateRoots) {
+      event.preventDefault()
+      return
+    }
+
     const left = event.currentTarget.getBoundingClientRect().left
     setMenuTarget({ date: toIsoDate(timeDay.floor(scale.invert(event.clientX - left))) })
   }
@@ -149,6 +156,10 @@ export function Timeline({
     }
 
     const { item } = menuTarget
+    if (item.isFrame) {
+      return [{ label: 'Открыть', onSelect: () => onOpenItem?.(item) }]
+    }
+
     return [
       { label: 'Открыть', onSelect: () => onOpenItem?.(item) },
       ...childKindsOf(item.kind).map((kind) => ({
@@ -245,7 +256,7 @@ function ItemBlock({ block, width, selected, onOpen }: ItemBlockProps) {
   const labelX = Math.max(block.x, 0) + 6
   const room = Math.min(block.x + block.width, width) - labelX - 6
   const label = fit(item.title, room)
-  const name = `${itemKindLabels[item.kind]} "${item.title}", ${formatItemDates(item)}`
+  const name = `${itemKindLabels[item.kind]} "${item.title}", ${formatItemDates(item)}${item.isFrame ? ', рамка' : ''}`
 
   function openByKey(event: KeyboardEvent) {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -258,6 +269,7 @@ function ItemBlock({ block, width, selected, onOpen }: ItemBlockProps) {
     <g
       className={styles.block}
       data-kind={item.kind}
+      data-frame={item.isFrame || undefined}
       data-item-id={item.id}
       data-selected={selected || undefined}
       style={{ color: block.color }}

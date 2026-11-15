@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import type { Item, ItemKind } from '@/entities/item'
-import { useWorkspaces, WorkspaceDot } from '@/entities/workspace'
+import { canCreateRoot, useWorkspaces, WorkspaceDot } from '@/entities/workspace'
 import { JoinByLinkDialog } from '@/features/invitation-accept'
 import { CreateItemDialog, DeleteItemDialog, type ItemDraft } from '@/features/item-edit'
 import { MoveItemDialog } from '@/features/item-move'
@@ -52,7 +52,7 @@ export function RoadmapPage() {
   }
 
   function createAt(kind: ItemKind, date: string) {
-    const visible = workspaces.data?.find((workspace) => !hidden.has(workspace.id))
+    const visible = workspaces.data?.find((workspace) => !hidden.has(workspace.id) && canCreateRoot(workspace))
     setDraft({ parent: null, kind, startDate: date, endDate: date, workspaceId: visible?.id })
   }
 
@@ -120,6 +120,7 @@ export function RoadmapPage() {
             onDeleteItem={setDeleting}
             onMoveItem={setMoving}
             onCreateAt={createAt}
+            canCreateRoots={workspaces.data.some((workspace) => !hidden.has(workspace.id) && canCreateRoot(workspace))}
           />
         </Page>
       </div>

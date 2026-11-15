@@ -10,6 +10,7 @@ import {
   type ItemKind,
 } from '@/entities/item'
 import { WorkspaceDot, type WorkspaceSummary } from '@/entities/workspace'
+import { ItemAccess } from '@/features/item-access'
 import { EditItemForm } from '@/features/item-edit'
 import { ItemLinks } from '@/features/item-links'
 import { useMoveItem } from '@/features/item-move'
@@ -46,10 +47,16 @@ export function EventPanel({ itemId, workspaces, onOpen, onClose, onAddChild, on
     )
   }
 
+  const workspace = workspaces.find((w) => w.id === details.data.item.workspaceId)
+
+  if (details.data.item.isFrame) {
+    return <FrameView details={details.data} workspace={workspace} onOpen={onOpen} onClose={onClose} />
+  }
+
   return (
     <ItemView
       details={details.data}
-      workspace={workspaces.find((w) => w.id === details.data.item.workspaceId)}
+      workspace={workspace}
       onOpen={onOpen}
       onClose={onClose}
       onAddChild={onAddChild}
@@ -64,6 +71,81 @@ type ItemViewProps = Omit<EventPanelProps, 'itemId' | 'workspaces'> & {
   workspace?: WorkspaceSummary
 }
 
+type FrameViewProps = Pick<ItemViewProps, 'details' | 'workspace' | 'onOpen' | 'onClose'>
+
+/**
+ * Рамка: узел, который пользователю не открыт, но внутри него есть открытое. Видны только название, даты и путь
+ * к открытому, без описания, ссылок и действий (ADR-0003).
+ */
+function FrameView({ details, workspace, onOpen, onClose }: FrameViewProps) {
+  const { item, path, children } = details
+
+  return (
+    <SidePanel title={item.title} onClose={onClose}>
+      <div className={styles.content}>
+        <PathNav path={path} onOpen={onOpen} />
+        <Facts item={item} workspace={workspace} />
+        <p className={styles.notice}>
+          Этот узел вам не открыт, поэтому он показан рамкой: только название и даты. Внутри есть то, что открыто вашим ролям.
+        </p>
+        <ul className={styles.list} aria-label="Открытое внутри">
+          {children.map((child) => (
+            <li key={child.id}>
+              <button type="button" className={styles.child} onClick={() => onOpen(child.id)}>
+                <span className={styles.childTitle}>{child.title}</span>
+                <span className={styles.muted}>
+                  {itemKindLabels[child.kind]}, {formatItemDates(child)}
+                  {child.isFrame && ', рамка'}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </SidePanel>
+  )
+}
+
+function PathNav({ path, onOpen }: { path: readonly Item[]; onOpen: (itemId: string) => void }) {
+  if (path.length === 0) {
+    return null
+  }
+
+  return (
+    <nav aria-label="Где лежит узел">
+      <ol className={styles.path}>
+        {path.map((ancestor) => (
+          <li key={ancestor.id}>
+            <button type="button" className={styles.link} onClick={() => onOpen(ancestor.id)}>
+              {ancestor.title}
+            </button>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )
+}
+
+function Facts({ item, workspace }: { item: Item; workspace?: WorkspaceSummary }) {
+  return (
+    <dl className={styles.facts}>
+      <dt>Вид</dt>
+      <dd>{itemKindLabels[item.kind]}</dd>
+      {workspace && (
+        <>
+          <dt>Команда</dt>
+          <dd className={styles.team}>
+            <WorkspaceDot color={workspace.color} />
+            {workspace.name}
+          </dd>
+        </>
+      )}
+      <dt>Даты</dt>
+      <dd>{formatItemDates(item)}</dd>
+    </dl>
+  )
+}
+
 function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete, onMove }: ItemViewProps) {
   const [editing, setEditing] = useState(false)
   const reorder = useMoveItem()
@@ -75,35 +157,8 @@ function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete, o
   return (
     <SidePanel title={item.title} onClose={onClose}>
       <div className={styles.content}>
-        {path.length > 0 && (
-          <nav aria-label="Где лежит узел">
-            <ol className={styles.path}>
-              {path.map((ancestor) => (
-                <li key={ancestor.id}>
-                  <button type="button" className={styles.link} onClick={() => onOpen(ancestor.id)}>
-                    {ancestor.title}
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        )}
-
-        <dl className={styles.facts}>
-          <dt>Вид</dt>
-          <dd>{itemKindLabels[item.kind]}</dd>
-          {workspace && (
-            <>
-              <dt>Команда</dt>
-              <dd className={styles.team}>
-                <WorkspaceDot color={workspace.color} />
-                {workspace.name}
-              </dd>
-            </>
-          )}
-          <dt>Даты</dt>
-          <dd>{formatItemDates(item)}</dd>
-        </dl>
+        <PathNav path={path} onOpen={onOpen} />
+        <Facts item={item} workspace={workspace} />
 
         {parent && isOutside(item, parent) && (
           <p className={styles.warning}>
@@ -129,6 +184,8 @@ function ItemView({ details, workspace, onOpen, onClose, onAddChild, onDelete, o
             </div>
           </>
         )}
+
+        <ItemAccess details={details} />
 
         <ItemLinks itemId={item.id} links={links} />
 

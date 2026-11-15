@@ -55,6 +55,7 @@ namespace RoadmapPlusPlus.Modules.Identity
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUser, HttpCurrentUser>();
             services.AddScoped<IWorkspaceMemberships, WorkspaceMemberships>();
+            services.AddScoped<IWorkspaceRoles, WorkspaceRoles>();
             services.AddScoped<WorkspaceService>();
         }
 
