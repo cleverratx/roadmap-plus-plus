@@ -1,20 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using RoadmapPlusPlus.BuildingBlocks;
+using RoadmapPlusPlus.Modules.Planning.Application.Access;
 using RoadmapPlusPlus.Modules.Planning.Application.Links;
+using RoadmapPlusPlus.Modules.Planning.Domain.Access;
 using RoadmapPlusPlus.Modules.Planning.Domain.Items;
 using RoadmapPlusPlus.Modules.Planning.Infrastructure.Persistence;
 
 namespace RoadmapPlusPlus.Modules.Planning.Application.Items
 {
-    internal sealed class ItemService( PlanningDbContext db, ItemVisibility visibility, TimeProvider time )
+    internal sealed class ItemService( PlanningDbContext db, ItemVisibility visibility, ItemGrants grants, TimeProvider time )
     {
         /// <summary>Сколько дней можно запросить за раз: таймлайн просит видимый диапазон, а год с запасом покрывает самый дальний зум.</summary>
         public const int MaxRangeDays = 3 * 366;
 
         /// <summary>
         /// Узлы с датами, которые пересекаются с диапазоном <paramref name="from"/>..<paramref name="to"/>, из всех команд пользователя.
-        /// Узлы без дат на таймлайн не попадают: их показывает панель родителя.
+        /// Узлы без дат на таймлайн не попадают: их показывает панель родителя. Рамки, то есть предки открытых ролям узлов,
+        /// приходят вместе со всеми с признаком <c>IsFrame</c>.
         /// </summary>
         public async Task<Result<ItemResponse[]>> ListAsync( DateOnly from, DateOnly to, Guid? workspaceId, CancellationToken cancellationToken )
         {
@@ -26,26 +29,32 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                 } );
             }
 
-            IQueryable<Item> items = await visibility.VisibleItemsAsync( cancellationToken );
+            ItemScope scope = await visibility.ScopeAsync( cancellationToken );
+            IQueryable<Item> items = scope.Seen( db.Items );
             if ( workspaceId is { } only )
             {
                 items = items.Where( i => i.WorkspaceId == only );
             }
 
-            ItemResponse[] found = await items
+            List<Item> found = await items
                 .AsNoTracking()
                 .Where( i => i.StartDate <= to && i.EndDate >= from )
                 .OrderBy( i => i.StartDate ).ThenBy( i => i.Position )
-                .Select( i => new ItemResponse( i.Id, i.WorkspaceId, i.ParentId, i.Kind, i.Title, i.StartDate, i.EndDate, i.Position ) )
-                .ToArrayAsync( cancellationToken );
+                .ToListAsync( cancellationToken );
 
-            return found;
+            return found.Select( i => ItemResponse.From( i, scope.IsFrame( i.Id ) ) ).ToArray();
         }
 
         public async Task<Result<ItemDetails>> GetAsync( Guid itemId, CancellationToken cancellationToken )
         {
-            Item? item = await FindVisibleAsync( itemId, cancellationToken );
-            return item is null ? PlanningErrors.ItemNotFound : await DetailsAsync( item, cancellationToken );
+            ItemScope scope = await visibility.ScopeAsync( cancellationToken );
+            Item? item = await scope.Seen( db.Items ).AsNoTracking().FirstOrDefaultAsync( i => i.Id == itemId, cancellationToken );
+            if ( item is null )
+            {
+                return PlanningErrors.ItemNotFound;
+            }
+
+            return scope.IsFrame( item.Id ) ? await FrameDetailsAsync( item, scope, cancellationToken ) : await DetailsAsync( item, cancellationToken );
         }
 
         public async Task<Result<ItemDetails>> CreateAsync( CreateItemRequest request, CancellationToken cancellationToken )
@@ -56,6 +65,8 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                 return content.Error;
             }
 
+            ItemScope scope = await visibility.ScopeAsync( cancellationToken );
+            IReadOnlyList<Guid> roleIds = request.RoleIds ?? [];
             DateTimeOffset now = time.GetUtcNow();
             Result<Item> created;
 
@@ -79,9 +90,14 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                     } );
                 }
 
-                if ( !await visibility.CanCreateInWorkspaceAsync( workspaceId, cancellationToken ) )
+                if ( scope.In( workspaceId ) is null )
                 {
                     return PlanningErrors.WorkspaceNotFound;
+                }
+
+                if ( !scope.CanCreateRoot( workspaceId ) )
+                {
+                    return PlanningErrors.RootNeedsHead;
                 }
 
                 created = Item.CreateRoot( workspaceId, request.Kind, content.Value, await NextPositionAsync( workspaceId, null, cancellationToken ), now );
@@ -92,7 +108,17 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                 return created.Error;
             }
 
+            if ( roleIds.Count > 0 )
+            {
+                Result allowed = await grants.CheckAsync( scope, created.Value.WorkspaceId, roleIds, cancellationToken );
+                if ( !allowed.IsSuccess )
+                {
+                    return allowed.Error;
+                }
+            }
+
             db.Items.Add( created.Value );
+            db.ItemRoles.AddRange( roleIds.Distinct().Select( roleId => new ItemRole( created.Value.Id, roleId ) ) );
             await db.SaveChangesAsync( cancellationToken );
             return await DetailsAsync( created.Value, cancellationToken );
         }
@@ -153,6 +179,12 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
 
             Item? parent = null;
             List<Guid> parentPath = [];
+            if ( request.ParentId is null && item.ParentId is not null && ItemNesting.CanBeRoot( item.Kind )
+                && !( await visibility.ScopeAsync( cancellationToken ) ).CanCreateRoot( item.WorkspaceId ) )
+            {
+                return PlanningErrors.RootNeedsHead;
+            }
+
             if ( request.ParentId is { } parentId )
             {
                 parent = await FindVisibleAsync( parentId, cancellationToken );
@@ -161,7 +193,7 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                     return PlanningErrors.ItemNotFound;
                 }
 
-                parentPath = [ .. ( await PathAsync( parent, cancellationToken ) ).Select( p => p.Id ), parent.Id ];
+                parentPath = [ .. ( await PathAsync( parent, await visibility.ScopeAsync( cancellationToken ), cancellationToken ) ).Select( p => p.Id ), parent.Id ];
             }
 
             Guid? oldParentId = item.ParentId;
@@ -197,17 +229,20 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                 return PlanningErrors.ItemNotFound;
             }
 
-            IQueryable<Item> visible = await visibility.VisibleItemsAsync( cancellationToken );
-            List<ItemResponse> team = await visible
+            ItemScope scope = await visibility.ScopeAsync( cancellationToken );
+            List<ItemResponse> team = await scope.Visible( db.Items )
                 .AsNoTracking()
                 .Where( i => i.WorkspaceId == item.WorkspaceId )
                 .OrderBy( i => i.Position )
-                .Select( i => new ItemResponse( i.Id, i.WorkspaceId, i.ParentId, i.Kind, i.Title, i.StartDate, i.EndDate, i.Position ) )
+                .Select( i => new ItemResponse( i.Id, i.WorkspaceId, i.ParentId, i.Kind, i.Title, i.StartDate, i.EndDate, i.Position, false ) )
                 .ToListAsync( cancellationToken );
 
             ILookup<Guid?, ItemResponse> childrenOf = team.ToLookup( i => i.ParentId );
             List<MoveTarget> parents = [];
-            Stack<(ItemResponse Node, string[] Path)> pending = new( childrenOf[ null ].Reverse().Select( root => (root, Array.Empty<string>()) ) );
+            Stack<(ItemResponse Node, string[] Path)> pending = new( team
+                .Where( i => i.ParentId is null || team.All( other => other.Id != i.ParentId ) )
+                .Reverse()
+                .Select( top => (top, Array.Empty<string>()) ) );
 
             while ( pending.TryPop( out (ItemResponse Node, string[] Path) next ) )
             {
@@ -228,7 +263,7 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                 }
             }
 
-            return new MoveTargets( ItemNesting.CanBeRoot( item.Kind ), item.ParentId, parents );
+            return new MoveTargets( ItemNesting.CanBeRoot( item.Kind ) && scope.CanCreateRoot( item.WorkspaceId ), item.ParentId, parents );
         }
 
         private Task<List<Item>> SiblingsAsync( Guid workspaceId, Guid? parentId, Guid exceptId, CancellationToken cancellationToken )
@@ -264,11 +299,12 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
 
         private async Task<ItemDetails> DetailsAsync( Item item, CancellationToken cancellationToken )
         {
+            ItemScope scope = await visibility.ScopeAsync( cancellationToken );
             List<ItemResponse> children = await db.Items
                 .AsNoTracking()
                 .Where( i => i.ParentId == item.Id )
                 .OrderBy( i => i.Position )
-                .Select( i => new ItemResponse( i.Id, i.WorkspaceId, i.ParentId, i.Kind, i.Title, i.StartDate, i.EndDate, i.Position ) )
+                .Select( i => new ItemResponse( i.Id, i.WorkspaceId, i.ParentId, i.Kind, i.Title, i.StartDate, i.EndDate, i.Position, false ) )
                 .ToListAsync( cancellationToken );
 
             List<LinkResponse> links = await db.Links
@@ -278,14 +314,40 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
                 .Select( l => new LinkResponse( l.Id, l.Url, l.Title, l.Kind, l.Position ) )
                 .ToListAsync( cancellationToken );
 
-            return new ItemDetails( ItemResponse.From( item ), item.DescriptionMd, await PathAsync( item, cancellationToken ), children, links );
+            IReadOnlyList<ItemResponse> path = await PathAsync( item, scope, cancellationToken );
+            List<Guid> roleIds = await grants.OfAsync( [ item.Id ], cancellationToken );
+            List<Guid> inherited = path.Count == 0 ? [] : await grants.OfAsync( path.Select( p => p.Id ), cancellationToken );
+
+            return new ItemDetails( ItemResponse.From( item ), item.DescriptionMd, path, children, links, roleIds, inherited );
         }
 
         /// <summary>
-        /// Предки узла от корня до родителя одним рекурсивным запросом. Все предки в той же команде, что и узел,
-        /// поэтому отдельно проверять их видимость не нужно.
+        /// Рамка: предок узла, открытого ролям пользователя, который сам ему не открыт. Видны только название, даты и путь,
+        /// а из детей только то, что пользователю открыто, и другие рамки на пути к открытому.
         /// </summary>
-        private async Task<IReadOnlyList<ItemResponse>> PathAsync( Item item, CancellationToken cancellationToken )
+        private async Task<ItemDetails> FrameDetailsAsync( Item item, ItemScope scope, CancellationToken cancellationToken )
+        {
+            List<Item> children = await scope.Seen( db.Items )
+                .AsNoTracking()
+                .Where( i => i.ParentId == item.Id )
+                .OrderBy( i => i.Position )
+                .ToListAsync( cancellationToken );
+
+            return new ItemDetails(
+                ItemResponse.From( item, isFrame: true ),
+                string.Empty,
+                await PathAsync( item, scope, cancellationToken ),
+                children.Select( c => ItemResponse.From( c, scope.IsFrame( c.Id ) ) ).ToList(),
+                [],
+                [],
+                [] );
+        }
+
+        /// <summary>
+        /// Предки узла от корня до родителя одним рекурсивным запросом. Предки видимого узла видны всегда: они либо открыты
+        /// пользователю, либо показываются рамками, это и отмечает <c>IsFrame</c>.
+        /// </summary>
+        private async Task<IReadOnlyList<ItemResponse>> PathAsync( Item item, ItemScope scope, CancellationToken cancellationToken )
         {
             if ( item.ParentId is null )
             {
@@ -308,7 +370,7 @@ namespace RoadmapPlusPlus.Modules.Planning.Application.Items
             List<ItemResponse> path = [];
             for ( Guid? id = item.ParentId; id is { } current && byId.TryGetValue( current, out Item? ancestor ); id = ancestor.ParentId )
             {
-                path.Add( ItemResponse.From( ancestor ) );
+                path.Add( ItemResponse.From( ancestor, scope.IsFrame( ancestor.Id ) ) );
             }
 
             path.Reverse();

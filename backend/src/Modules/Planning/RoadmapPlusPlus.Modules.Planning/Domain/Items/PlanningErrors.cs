@@ -17,6 +17,19 @@ namespace RoadmapPlusPlus.Modules.Planning.Domain.Items
             "planning.link_not_found",
             "Ссылка не найдена." );
 
+        public static readonly Error RootNeedsHead = Error.Forbidden(
+            "planning.root_needs_head",
+            "Когда в команде включены роли, узлы верхнего уровня создают только главы: так новый узел сразу открывают нужным ролям." );
+
+        public static readonly Error NotHead = Error.Forbidden(
+            "planning.not_head",
+            "Открывать узлы ролям может только глава команды." );
+
+        public static readonly Error UnknownRole = Error.Validation(
+            "planning.unknown_role",
+            "Такой роли в команде нет.",
+            new Dictionary<string, string[]> { [ "roleIds" ] = [ "Такой роли в команде нет." ] } );
+
         public static Error TooManyLinks( int max )
         {
             return Error.Validation( "planning.too_many_links", $"У одного узла может быть не больше {max} ссылок." );

@@ -46,3 +46,16 @@ export function rememberItem(queryClient: QueryClient, details: ItemDetails) {
   queryClient.setQueryData(itemQueryKey(details.item.id), details)
   void queryClient.invalidateQueries({ queryKey: allItemsQueryKey, predicate: (query) => query.queryKey[1] !== details.item.id })
 }
+
+export function accessSummaryQueryKey(workspaceId: string) {
+  return ['items', 'access-summary', workspaceId] as const
+}
+
+/** Сколько событий команды не открыто ни одной роли. Доступно только главе, поэтому запрос включается флагом. */
+export function useAccessSummary(workspaceId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: accessSummaryQueryKey(workspaceId),
+    queryFn: ({ signal }) => unwrap(api.GET('/api/items/access-summary', { params: { query: { workspaceId } }, signal })),
+    enabled,
+  })
+}

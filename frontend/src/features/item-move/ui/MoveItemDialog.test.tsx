@@ -5,10 +5,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { json, mockApi, problem } from '@/shared/lib/test/mock-api'
 import { MoveItemDialog } from './MoveItemDialog'
 
-const study = { id: 'study', workspaceId: 'team', parentId: null, kind: 'macro' as const, title: 'Учёба', startDate: '2026-09-01', endDate: '2027-06-30', position: 0 }
-const projects = { id: 'projects', workspaceId: 'team', parentId: null, kind: 'macro' as const, title: 'Проектная деятельность', startDate: '2026-09-01', endDate: '2026-12-31', position: 1 }
-const semester = { id: 'semester', workspaceId: 'team', parentId: 'study', kind: 'macro' as const, title: 'Осенний семестр', startDate: '2026-09-01', endDate: '2026-12-31', position: 0 }
-const hackathon = { id: 'event', workspaceId: 'team', parentId: 'study', kind: 'event' as const, title: 'Хакатон', startDate: '2026-11-14', endDate: '2026-11-16', position: 1 }
+const study = { id: 'study', workspaceId: 'team', parentId: null, kind: 'macro' as const, title: 'Учёба', startDate: '2026-09-01', endDate: '2027-06-30', position: 0, isFrame: false }
+const projects = { id: 'projects', workspaceId: 'team', parentId: null, kind: 'macro' as const, title: 'Проектная деятельность', startDate: '2026-09-01', endDate: '2026-12-31', position: 1, isFrame: false }
+const semester = { id: 'semester', workspaceId: 'team', parentId: 'study', kind: 'macro' as const, title: 'Осенний семестр', startDate: '2026-09-01', endDate: '2026-12-31', position: 0, isFrame: false }
+const hackathon = { id: 'event', workspaceId: 'team', parentId: 'study', kind: 'event' as const, title: 'Хакатон', startDate: '2026-11-14', endDate: '2026-11-16', position: 1, isFrame: false }
 
 const targets = {
   canBeRoot: true,
@@ -42,7 +42,7 @@ describe('MoveItemDialog', () => {
   })
 
   it('narrows the list by search and moves the item to the chosen parent', async () => {
-    const moved = { item: { ...hackathon, parentId: 'projects' }, descriptionMd: '', path: [projects], children: [], links: [] }
+    const moved = { item: { ...hackathon, parentId: 'projects' }, descriptionMd: '', path: [projects], children: [], links: [], roleIds: [], inheritedRoleIds: [] }
     const fetchMock = mockApi({
       'GET /api/items/event/move-targets': () => json(targets),
       'POST /api/items/event/move': () => json(moved),

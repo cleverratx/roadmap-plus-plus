@@ -1,4 +1,5 @@
 export {
+  canCreateRoot,
   useWorkspace,
   useWorkspaces,
   workspaceQueryKey,
@@ -9,4 +10,5 @@ export {
   type WorkspaceSummary,
 } from './model/workspaces'
 export { RoleBadge } from './ui/RoleBadge'
+export { RolePicker } from './ui/RolePicker'
 export { WorkspaceDot } from './ui/WorkspaceDot'

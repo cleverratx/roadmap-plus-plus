@@ -1,9 +1,11 @@
 export { formatItemDates, isOutside } from './model/dates'
 export {
+  accessSummaryQueryKey,
   allItemsQueryKey,
   rememberItem,
   itemQueryKey,
   itemsQueryKey,
+  useAccessSummary,
   useItem,
   useItems,
   type DateRange,

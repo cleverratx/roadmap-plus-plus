@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { useAccessSummary } from '@/entities/item'
 import { RoleBadge, type WorkspaceDetails, type WorkspaceRole } from '@/entities/workspace'
 import { api, toFormErrors, unwrap } from '@/shared/api'
 import { teamColors } from '@/shared/config'
@@ -32,6 +33,8 @@ export function RolesSection({ workspace }: { workspace: WorkspaceDetails }) {
   )
 
   const nextColor = teamColors[workspace.roles.length % teamColors.length]
+  const summary = useAccessSummary(workspace.id, workspace.isHead && (workspace.rolesEnabled || workspace.roles.length > 0))
+  const unshared = summary.data?.unsharedEvents ?? 0
 
   return (
     <section className={styles.section} aria-labelledby={titleId}>
@@ -54,6 +57,19 @@ export function RolesSection({ workspace }: { workspace: WorkspaceDetails }) {
             : 'Роли выключены: все участники видят все события команды.'}
         </p>
       )}
+      {summary.data && unshared > 0 && (
+        <div className={styles.warning} role="status">
+          <p className={styles.warningText}>
+            {unshared} {plural(unshared, ['событие не открыто', 'события не открыты', 'событий не открыты'])} ни одной роли.{' '}
+            {workspace.rolesEnabled ? 'Сейчас их видят только главы.' : 'Когда вы включите роли, их будут видеть только главы.'}
+          </p>
+          <p className={styles.muted}>
+            Например: {summary.data.examples.map((item) => `"${item.title}"`).join(', ')}
+            {unshared > summary.data.examples.length && ' и другие'}. Открыть событие ролям можно в его панели, кнопкой "Изменить доступ".
+          </p>
+        </div>
+      )}
+
       {toggle.isError && (
         <p className={styles.error} role="alert">
           {toFormErrors(toggle.error).message}

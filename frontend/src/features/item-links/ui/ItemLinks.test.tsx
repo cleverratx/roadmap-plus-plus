@@ -6,7 +6,7 @@ import { itemQueryKey, useItem, type ItemDetails } from '@/entities/item'
 import { json, mockApi, problem } from '@/shared/lib/test/mock-api'
 import { ItemLinks } from './ItemLinks'
 
-const hackathon = { id: 'event', workspaceId: 'skb', parentId: null, kind: 'event' as const, title: 'Хакатон', startDate: '2026-11-14', endDate: '2026-11-16', position: 0 }
+const hackathon = { id: 'event', workspaceId: 'skb', parentId: null, kind: 'event' as const, title: 'Хакатон', startDate: '2026-11-14', endDate: '2026-11-16', position: 0, isFrame: false }
 const repo = { id: 'repo', url: 'https://github.com/skb/hackathon', title: '', kind: 'repo' as const, position: 0 }
 
 function LinksOfCachedItem() {
@@ -16,7 +16,7 @@ function LinksOfCachedItem() {
 
 function renderLinks(links = [repo]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: false } } })
-  const details: ItemDetails = { item: hackathon, descriptionMd: '', path: [], children: [], links }
+  const details: ItemDetails = { item: hackathon, descriptionMd: '', path: [], children: [], links, roleIds: [], inheritedRoleIds: [] }
   client.setQueryData(itemQueryKey('event'), details)
   render(
     <QueryClientProvider client={client}>

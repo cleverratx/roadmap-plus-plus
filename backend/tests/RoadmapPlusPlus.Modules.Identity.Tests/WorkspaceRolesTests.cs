@@ -71,7 +71,7 @@ namespace RoadmapPlusPlus.Modules.Identity.Tests
             workspace.SetMemberRoles( _head, _member, [ jury.Id, mentors.Id ] );
             workspace.SetMemberRoles( _head, _member, [ mentors.Id, design.Id, design.Id ] );
 
-            Assert.Equal( [ mentors.Id, design.Id ], workspace.FindMember( _member )!.Roles.Select( r => r.RoleId ).Order() );
+            Assert.Equal( new[] { mentors.Id, design.Id }.Order(), workspace.FindMember( _member )!.Roles.Select( r => r.RoleId ).Order() );
         }
 
         [Fact]

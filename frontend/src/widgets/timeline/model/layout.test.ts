@@ -7,7 +7,7 @@ const team = 'team-1'
 const other = 'team-2'
 
 function item(id: string, kind: ItemKind, start: string | null, end: string | null, parentId: string | null = null, workspaceId = team): Item {
-  return { id, workspaceId, parentId, kind, title: id, startDate: start, endDate: end, position: 0 }
+  return { id, workspaceId, parentId, kind, title: id, startDate: start, endDate: end, position: 0, isFrame: false }
 }
 
 function over(from: Date, to: Date) {

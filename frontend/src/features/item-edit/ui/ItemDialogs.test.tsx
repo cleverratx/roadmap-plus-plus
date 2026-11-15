@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -7,9 +7,9 @@ import { json, mockApi, problem } from '@/shared/lib/test/mock-api'
 import { CreateItemDialog } from './CreateItemDialog'
 import { DeleteItemDialog } from './DeleteItemDialog'
 
-const study = { id: 'study', name: 'Учёба', color: '#2b8a3e', isHead: true, memberCount: 1 }
-const skb = { id: 'skb', name: 'СКБ', color: '#3b5bdb', isHead: false, memberCount: 3 }
-const hackathon = { id: 'event', workspaceId: 'skb', parentId: null, kind: 'event' as const, title: 'Хакатон', startDate: '2026-11-03', endDate: '2026-11-05', position: 0 }
+const study = { id: 'study', name: 'Учёба', color: '#2b8a3e', isHead: true, memberCount: 1, rolesEnabled: false }
+const skb = { id: 'skb', name: 'СКБ', color: '#3b5bdb', isHead: false, memberCount: 3, rolesEnabled: false }
+const hackathon = { id: 'event', workspaceId: 'skb', parentId: null, kind: 'event' as const, title: 'Хакатон', startDate: '2026-11-03', endDate: '2026-11-05', position: 0, isFrame: false }
 
 function renderWithQuery(children: ReactNode) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -24,7 +24,7 @@ async function sentBody(fetchMock: ReturnType<typeof mockApi>, method: string) {
 
 describe('CreateItemDialog', () => {
   it('creates a root event on the clicked day in the chosen team', async () => {
-    const created = { item: { ...hackathon, id: 'new', title: 'Лекция', workspaceId: 'study' }, descriptionMd: '', path: [], children: [], links: [] }
+    const created = { item: { ...hackathon, id: 'new', title: 'Лекция', workspaceId: 'study' }, descriptionMd: '', path: [], children: [], links: [], roleIds: [], inheritedRoleIds: [] }
     const fetchMock = mockApi({ 'POST /api/items': () => json(created, 201) })
     const onCreated = vi.fn()
     renderWithQuery(
@@ -55,7 +55,7 @@ describe('CreateItemDialog', () => {
 
   it('puts a child inside its parent and lets it go without dates', async () => {
     const fetchMock = mockApi({
-      'POST /api/items': () => json({ item: { ...hackathon, id: 'repo' }, descriptionMd: '', path: [hackathon], children: [], links: [] }, 201),
+      'POST /api/items': () => json({ item: { ...hackathon, id: 'repo' }, descriptionMd: '', path: [hackathon], children: [], links: [], roleIds: [], inheritedRoleIds: [] }, 201),
     })
     renderWithQuery(
       <CreateItemDialog
@@ -97,6 +97,50 @@ describe('CreateItemDialog', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Создать' }))
 
     expect(await screen.findByText('Назовите узел.')).toBeInTheDocument()
+  })
+})
+
+describe('CreateItemDialog with roles', () => {
+  const jury = { id: 'jury', name: 'Жюри', color: '#7048e8', memberCount: 2 }
+
+  it('leaves out teams where only heads may add top level items', () => {
+    mockApi({})
+    renderWithQuery(
+      <CreateItemDialog
+        draft={{ parent: null, kind: 'event', startDate: '2026-11-10', endDate: '2026-11-10' }}
+        workspaces={[study, { ...skb, rolesEnabled: true }, { ...skb, id: 'free', name: 'Свободная' }]}
+        onClose={vi.fn()}
+        onCreated={vi.fn()}
+      />,
+    )
+
+    const teams = screen.getByRole('radiogroup', { name: 'Команда' })
+    expect(within(teams).getAllByRole('radio').map((radio) => radio.textContent)).toEqual(['Учёба', 'Свободная'])
+  })
+
+  it('lets a head open a new top level event to roles right away', async () => {
+    const head = { ...skb, isHead: true, rolesEnabled: true }
+    const created = { item: { ...hackathon, id: 'new' }, descriptionMd: '', path: [], children: [], links: [], roleIds: ['jury'], inheritedRoleIds: [] }
+    const fetchMock = mockApi({
+      'GET /api/workspaces/skb': () => json({ ...head, roles: [jury], members: [] }),
+      'POST /api/items': () => json(created, 201),
+    })
+    renderWithQuery(
+      <CreateItemDialog
+        draft={{ parent: null, kind: 'event', startDate: '2026-11-10', endDate: '2026-11-10', workspaceId: 'skb' }}
+        workspaces={[head]}
+        onClose={vi.fn()}
+        onCreated={vi.fn()}
+      />,
+    )
+
+    expect(await screen.findByText('Если не выбрать ни одной роли, событие увидят только главы.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Жюри' }))
+    await userEvent.type(screen.getByLabelText('Название'), 'Судейство')
+    await userEvent.click(screen.getByRole('button', { name: 'Создать' }))
+
+    await vi.waitFor(() => expect(fetchMock.mock.calls.some(([call]) => (call as Request).method === 'POST')).toBe(true))
+    expect(await sentBody(fetchMock, 'POST')).toMatchObject({ workspaceId: 'skb', title: 'Судейство', roleIds: ['jury'] })
   })
 })
 

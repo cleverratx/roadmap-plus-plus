@@ -1166,6 +1166,136 @@
               }
             }
           },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/access-summary": {
+      "get": {
+        "tags": [
+          "Items"
+        ],
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessSummary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/{itemId}/roles": {
+      "put": {
+        "tags": [
+          "Items"
+        ],
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetItemRolesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -1347,6 +1477,16 @@
           },
           "400": {
             "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1580,6 +1720,25 @@
   },
   "components": {
     "schemas": {
+      "AccessSummary": {
+        "required": [
+          "unsharedEvents",
+          "examples"
+        ],
+        "type": "object",
+        "properties": {
+          "unsharedEvents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemResponse"
+            }
+          }
+        }
+      },
       "CreateItemRequest": {
         "required": [
           "workspaceId",
@@ -1631,6 +1790,16 @@
               "null",
               "string"
             ]
+          },
+          "roleIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -1721,7 +1890,9 @@
           "descriptionMd",
           "path",
           "children",
-          "links"
+          "links",
+          "roleIds",
+          "inheritedRoleIds"
         ],
         "type": "object",
         "properties": {
@@ -1748,6 +1919,20 @@
             "items": {
               "$ref": "#/components/schemas/LinkResponse"
             }
+          },
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "inheritedRoleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -1768,7 +1953,8 @@
           "title",
           "startDate",
           "endDate",
-          "position"
+          "position",
+          "isFrame"
         ],
         "type": "object",
         "properties": {
@@ -1810,6 +1996,9 @@
           "position": {
             "type": "integer",
             "format": "int32"
+          },
+          "isFrame": {
+            "type": "boolean"
           }
         }
       },
@@ -2127,6 +2316,21 @@
           }
         }
       },
+      "SetItemRolesRequest": {
+        "required": [
+          "roleIds"
+        ],
+        "type": "object",
+        "properties": {
+          "roleIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "SetMemberRolesRequest": {
         "required": [
           "roleIds"
@@ -2250,7 +2454,8 @@
           "name",
           "color",
           "isHead",
-          "memberCount"
+          "memberCount",
+          "rolesEnabled"
         ],
         "type": "object",
         "properties": {
@@ -2270,6 +2475,9 @@
           "memberCount": {
             "type": "integer",
             "format": "int32"
+          },
+          "rolesEnabled": {
+            "type": "boolean"
           }
         }
       }

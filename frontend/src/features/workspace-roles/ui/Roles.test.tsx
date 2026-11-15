@@ -42,7 +42,8 @@ function renderRoles(workspace: WorkspaceDetails = team) {
 }
 
 function lastBody(fetchMock: ReturnType<typeof mockApi>) {
-  return (fetchMock.mock.calls.at(-1)![0] as Request).json()
+  const requests = fetchMock.mock.calls.map(([call]) => call as Request)
+  return requests.findLast((request) => request.method !== 'GET')!.json()
 }
 
 describe('RolesSection', () => {
@@ -107,6 +108,18 @@ describe('RolesSection', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Удалить' }))
 
     await vi.waitFor(() => expect(screen.queryByText('Судьи')).not.toBeInTheDocument())
+  })
+
+  it('warns the head about events no role can see', async () => {
+    mockApi({
+      'GET /api/items/access-summary': () =>
+        json({ unsharedEvents: 7, examples: [{ id: 'a', title: 'Хакатон' }, { id: 'b', title: 'Конференция' }] }),
+    })
+    renderRoles({ ...team, rolesEnabled: true })
+
+    const warning = await screen.findByRole('status')
+    expect(warning).toHaveTextContent('7 событий не открыты ни одной роли. Сейчас их видят только главы.')
+    expect(warning).toHaveTextContent('"Хакатон", "Конференция" и другие')
   })
 
   it('only shows roles to a regular member', () => {

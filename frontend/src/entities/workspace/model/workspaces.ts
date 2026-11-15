@@ -22,9 +22,15 @@ export function useWorkspaces() {
   })
 }
 
-export function useWorkspace(workspaceId: string) {
+export function useWorkspace(workspaceId: string, enabled = true) {
   return useQuery({
     queryKey: workspaceQueryKey(workspaceId),
     queryFn: ({ signal }) => unwrap(api.GET('/api/workspaces/{workspaceId}', { params: { path: { workspaceId } }, signal })),
+    enabled,
   })
+}
+
+/** Можно ли создавать узлы верхнего уровня: при включённых ролях это делают только главы (ADR-0003). */
+export function canCreateRoot(workspace: Pick<WorkspaceSummary, 'isHead' | 'rolesEnabled'>): boolean {
+  return workspace.isHead || !workspace.rolesEnabled
 }

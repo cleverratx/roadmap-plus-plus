@@ -27,7 +27,8 @@ namespace RoadmapPlusPlus.Modules.Identity.Application.Workspaces
                         workspace.Name,
                         workspace.Color,
                         member.IsHead,
-                        db.Members.Count( m => m.WorkspaceId == workspace.Id ) ) )
+                        db.Members.Count( m => m.WorkspaceId == workspace.Id ),
+                        workspace.RolesEnabled ) )
                 .AsNoTracking()
                 .ToListAsync( cancellationToken );
         }
@@ -211,7 +212,7 @@ namespace RoadmapPlusPlus.Modules.Identity.Application.Workspaces
             }
 
             Member me = workspace.FindMember( currentUser.Id )!;
-            return new WorkspaceSummary( workspace.Id, workspace.Name, workspace.Color, me.IsHead, workspace.Members.Count );
+            return new WorkspaceSummary( workspace.Id, workspace.Name, workspace.Color, me.IsHead, workspace.Members.Count, workspace.RolesEnabled );
         }
 
         private async Task<Result<WorkspaceDetails>> ChangeAsync( Guid workspaceId, Func<Workspace, Result> change, CancellationToken cancellationToken )
